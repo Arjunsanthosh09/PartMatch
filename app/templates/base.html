@@ -293,7 +293,7 @@ footer{background:#fff; border-top:1px solid var(--line); padding:64px 0 28px;}
 .modal-box{
   background:#fff; width:100%; max-width:420px; border:1px solid var(--line-strong); box-shadow:0 30px 60px -20px rgba(13,59,44,0.4);
   transform:translateY(24px) scale(.97); opacity:0; transition:transform .38s cubic-bezier(.34,1.56,.64,1), opacity .3s ease;
-  position:relative; max-height:90vh; overflow-y:auto;
+  position:relative; max-height:90vh; overflow-y:auto; overflow-x:hidden;
 }
 .modal-overlay.open .modal-box{transform:translateY(0) scale(1); opacity:1;}
 .modal-head{padding:26px 28px 0;}
@@ -318,7 +318,9 @@ footer{background:#fff; border-top:1px solid var(--line); padding:64px 0 28px;}
   transition:border-color .2s ease, background .2s ease; outline:none;
 }
 .field input:focus,.field select:focus{border-color:var(--green-600); background:#fff;}
-.field-row{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+.field-row{display:grid; grid-template-columns:1fr 1fr; gap:12px; min-width:0;}
+.field{min-width:0;}
+.field input,.field select{width:100%; min-width:0;}
 .form-foot{display:flex; justify-content:space-between; align-items:center; font-size:12.5px; margin-top:-4px;}
 .form-foot a{color:var(--green-700); font-weight:600;}
 .form-msg{font-size:12.5px; padding:10px 12px; background:var(--green-050); border:1px dashed var(--line-strong); color:var(--green-800,var(--green-700)); display:none; align-items:center; gap:8px;}
@@ -326,6 +328,29 @@ footer{background:#fff; border-top:1px solid var(--line); padding:64px 0 28px;}
 .switch-line{text-align:center; font-size:13px; color:var(--ink-soft); margin-top:18px;}
 .switch-line b{color:var(--green-700); cursor:pointer;}
 .checkline{display:flex; align-items:flex-start; gap:8px; font-size:12.5px; color:var(--ink-soft);}
+
+/* role toggle (customer / vendor / service center) */
+.role-toggle{display:flex; gap:6px; margin:30px 0 4px; flex-wrap:wrap;}
+.role-btn{
+  flex:1; min-width:105px; display:flex; align-items:center; justify-content:center; gap:6px;
+  padding:15px 10px; border:1px solid var(--line-strong); background:var(--bg-soft);
+  font-family:'Inter',sans-serif; font-size:12.5px; font-weight:600; color:var(--ink-soft);
+  cursor:pointer; transition:all .22s ease; white-space:nowrap;
+}
+.role-btn svg{width:15px; height:15px; flex-shrink:0;}
+.role-btn:hover{border-color:var(--green-600); color:var(--ink);}
+.role-btn.active{background:var(--green-700); border-color:var(--green-700); color:#fff;}
+.role-hint{font-size:12px; color:var(--ink-faint); margin-top:8px; min-height:14px;}
+
+.vendor-fields{
+  display:flex; flex-direction:column; gap:16px;
+  padding:16px 14px; background:var(--green-050); border:1px dashed var(--line-strong);
+  animation:vfIn .35s ease;
+}
+.vendor-fields[hidden]{display:none;}
+.vendor-fields-head{margin-top:-2px;}
+.vendor-fields-head .mono{font-size:10.5px; letter-spacing:.1em; color:var(--green-700); font-family:'IBM Plex Mono',monospace;}
+@keyframes vfIn{from{opacity:0; transform:translateY(-6px);} to{opacity:1; transform:translateY(0);}}
 
 /* ================= RESPONSIVE ================= */
 @media (max-width:960px){
@@ -396,10 +421,15 @@ footer{background:#fff; border-top:1px solid var(--line); padding:64px 0 28px;}
     <a href="#modules">How It Works</a>
     <a href="#service">Service Booking</a>
     <a href="#about">About</a>
-    <div class="navcta" style="display:flex;">
-      <button class="btn btn-ghost" data-open-auth="login" style="flex:1;">Log in</button>
-      <button class="btn btn-solid" data-open-auth="register" style="flex:1;">Register</button>
-    </div>
+    <div class="navcta">
+    {% if session.get('user_id') %}
+        <a href="{{ url_for(session['role'] + '_dashboard') }}" class="btn btn-ghost">Dashboard</a>
+        <a href="{{ url_for('logout') }}" class="btn btn-solid">Log out</a>
+    {% else %}
+        <button class="btn btn-ghost" data-open-auth="login">Log in</button>
+        <button class="btn btn-solid" data-open-auth="register">Register vehicle</button>
+    {% endif %}
+</div>
   </nav>
 </header>
 
@@ -430,11 +460,6 @@ footer{background:#fff; border-top:1px solid var(--line); padding:64px 0 28px;}
         <div class="scan-canvas">
           <svg viewBox="0 0 600 340" xmlns="http://www.w3.org/2000/svg">
             <!-- blueprint grid -->
-            <defs>
-              <pattern id="gridPattern" width="30" height="30" patternUnits="userSpaceOnUse">
-                <path d="M30 0H0V30" fill="none" stroke="#e3edd f" stroke-opacity="0"/>
-              </pattern>
-            </defs>
             <rect x="0" y="0" width="600" height="340" fill="#ffffff"/>
             <g stroke="#e3edde" stroke-width="1">
               <line x1="0" y1="60" x2="600" y2="60"/>
@@ -737,7 +762,9 @@ footer{background:#fff; border-top:1px solid var(--line); padding:64px 0 28px;}
       <div class="foot-col">
         <h5>Account</h5>
         <a data-open-auth="login">Log in</a>
-        <a data-open-auth="register">Register</a>
+        <a data-open-auth="register" data-role="customer">Register as customer</a>
+        <a data-open-auth="register" data-role="vendor">Register as vendor</a>
+        <a data-open-auth="register" data-role="service_center">Register as service center</a>
       </div>
     </div>
     <div class="foot-bottom">
@@ -756,71 +783,202 @@ footer{background:#fff; border-top:1px solid var(--line); padding:64px 0 28px;}
       <div class="mtab" data-mtab="register">Register</div>
     </div>
     <div class="modal-body">
-
+<div class="form-panel active" id="form-login">
       <!-- LOGIN -->
-      <div class="form-panel active" id="form-login">
-        <div>
-          <span class="auth-eyebrow">Welcome back</span>
-          <h3>Log in to your garage</h3>
-          <p class="sub">Access your vehicles, matched parts and service history.</p>
-        </div>
-        <form id="loginForm" style="display:flex; flex-direction:column; gap:16px;">
-          <div class="field">
-            <label for="loginEmail">Email or phone number</label>
-            <input type="text" id="loginEmail" placeholder="you@example.com" required>
-          </div>
-          <div class="field">
-            <label for="loginPass">Password</label>
-            <input type="password" id="loginPass" placeholder="••••••••" required>
-          </div>
-          <div class="form-foot">
-            <label class="checkline"><input type="checkbox" style="margin-top:2px;"> Keep me signed in</label>
-            <a href="#">Forgot password?</a>
-          </div>
-          <button type="submit" class="btn btn-solid btn-lg" style="width:100%;">Log in</button>
-          <div class="form-msg" id="loginMsg">✓ Logged in — redirecting to your dashboard…</div>
-        </form>
-        <p class="switch-line">New to PartMatch? <b data-switch-to="register">Create an account</b></p>
-      </div>
+<form id="loginForm" method="post" action="{{ url_for('login') }}" style="display:flex; flex-direction:column; gap:16px;">
+    <div class="field">
+        <label for="loginEmail">Email or phone number</label>
+        <input type="text" id="loginEmail" name="loginEmail" placeholder="you@example.com" required>
+    </div>
+    <div class="field">
+        <label for="loginPass">Password</label>
+        <input type="password" id="loginPass" name="loginPass" placeholder="••••••••" required>
+    </div>
+    <div class="form-foot">
+        <label class="checkline"><input type="checkbox" name="keepSigned" style="margin-top:2px;"> Keep me signed in</label>
+        <a href="#">Forgot password?</a>
+    </div>
+    <button type="submit" class="btn btn-solid btn-lg" style="width:100%;">Log in</button>
+    <div class="form-msg" id="loginMsg">✓ Logged in — redirecting to your dashboard…</div>
+</form>
+</div>
 
       <!-- REGISTER -->
-      <div class="form-panel" id="form-register">
-        <div>
-          <span class="auth-eyebrow">Start your compatibility profile</span>
-          <h3>Create your account</h3>
-          <p class="sub">Takes under two minutes. Add your vehicle right after.</p>
+<div class="form-panel" id="form-register">
+    <div>
+        <span class="auth-eyebrow">Start your compatibility profile</span>
+        <h3 id="regHeading">Create your account</h3>
+        <p class="sub" id="regSub">Takes under two minutes. Add your vehicle right after.</p>
+    </div>
+
+    <div class="role-toggle" role="tablist" aria-label="Account type">
+        <button type="button" class="role-btn active" data-role="customer" role="tab" aria-selected="true">
+            <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="6.5" r="3.3" stroke="currentColor" stroke-width="1.5"/><path d="M3.5 17c1.2-3.6 4-5.4 6.5-5.4S15.3 13.4 16.5 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            Customer
+        </button>
+        <button type="button" class="role-btn" data-role="vendor" role="tab" aria-selected="false">
+            <svg viewBox="0 0 20 20" fill="none"><path d="M3 8l1.2-4.2A1 1 0 015.16 3h9.68a1 1 0 01.96.78L17 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><rect x="3" y="8" width="14" height="8.5" rx="0.6" stroke="currentColor" stroke-width="1.5"/><path d="M7.5 12.2h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            Vendor
+        </button>
+        <button type="button" class="role-btn" data-role="service_center" role="tab" aria-selected="false">
+            <svg viewBox="0 0 20 20" fill="none"><path d="M12.4 3.6a3.2 3.2 0 00-4.3 3.9L3.7 12a1.5 1.5 0 002.1 2.1l4.5-4.4a3.2 3.2 0 003.9-4.3l-2 2-1.7-.5-.5-1.7 2.4-1.6z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/></svg>
+            Service Center
+        </button>
+    </div>
+    <p class="role-hint" id="roleHint"></p>
+
+    <form id="registerForm" method="post" action="{{ url_for('register') }}" style="display:flex; flex-direction:column; gap:16px;">
+        <!-- ✅ FIXED: Added name="regRole" -->
+        <input type="hidden" id="regRole" name="regRole" value="customer">
+
+        <!-- ✅ FIXED: Added name="regName" -->
+        <div class="field">
+            <label for="regName" id="regNameLabel">Full name</label>
+            <input type="text" id="regName" name="regName" placeholder="Arjun Menon" required>
         </div>
-        <form id="registerForm" style="display:flex; flex-direction:column; gap:16px;">
-          <div class="field-row">
-            <div class="field">
-              <label for="regName">Full name</label>
-              <input type="text" id="regName" placeholder="Arjun Menon" required>
-            </div>
-            <div class="field">
-              <label for="regPhone">Phone number</label>
-              <input type="tel" id="regPhone" placeholder="+91 90000 00000" required>
-            </div>
-          </div>
-          <div class="field">
+        <!-- ✅ FIXED: Added name="regPhone" -->
+        <div class="field">
+            <label for="regPhone">Phone number</label>
+            <input type="tel" id="regPhone" name="regPhone" placeholder="+91 90000 00000" required>
+        </div>
+        <!-- ✅ FIXED: Added name="regEmail" -->
+        <div class="field">
             <label for="regEmail">Email address</label>
-            <input type="email" id="regEmail" placeholder="you@example.com" required>
-          </div>
-          <div class="field">
+            <input type="email" id="regEmail" name="regEmail" placeholder="you@example.com" required>
+        </div>
+
+        <!-- vendor-only fields -->
+        <div id="vendorFields" class="vendor-fields" hidden>
+            <div class="vendor-fields-head">
+                <span class="mono">BUSINESS DETAILS</span>
+            </div>
+            <!-- ✅ FIXED: Added name="regBusinessName" -->
+            <div class="field">
+                <label for="regBusinessName">Business / shop name</label>
+                <input type="text" id="regBusinessName" name="regBusinessName" placeholder="Menon Auto Spares">
+            </div>
+            <!-- ✅ FIXED: Added name="regBusinessAddress" -->
+            <div class="field">
+                <label for="regBusinessAddress">Business address</label>
+                <input type="text" id="regBusinessAddress" name="regBusinessAddress" placeholder="Shop no., street, area">
+            </div>
+            <div class="field-row">
+                <!-- ✅ FIXED: Added name="regCity" -->
+                <div class="field">
+                    <label for="regCity">City</label>
+                    <input type="text" id="regCity" name="regCity" placeholder="Kochi">
+                </div>
+                <!-- ✅ FIXED: Added name="regPincode" -->
+                <div class="field">
+                    <label for="regPincode">Pincode</label>
+                    <input type="text" id="regPincode" name="regPincode" placeholder="682001">
+                </div>
+            </div>
+            <div class="field-row">
+                <!-- ✅ FIXED: Added name="regGst" -->
+                <div class="field">
+                    <label for="regGst">GST / business reg. no.</label>
+                    <input type="text" id="regGst" name="regGst" placeholder="32AAAAA0000A1Z5">
+                </div>
+                <!-- ✅ FIXED: Added name="regCategory" -->
+                <div class="field">
+                    <label for="regCategory">Primary product category</label>
+                    <select id="regCategory" name="regCategory">
+                        <option>Engine &amp; transmission</option>
+                        <option>Brakes &amp; suspension</option>
+                        <option>Electrical &amp; battery</option>
+                        <option>Body &amp; accessories</option>
+                        <option>Tyres &amp; wheels</option>
+                        <option>Other</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- service center-only fields -->
+        <div id="serviceCenterFields" class="vendor-fields" hidden>
+            <div class="vendor-fields-head">
+                <span class="mono">WORKSHOP DETAILS</span>
+            </div>
+            <!-- ✅ FIXED: Added name="regCenterName" -->
+            <div class="field">
+                <label for="regCenterName">Service center name</label>
+                <input type="text" id="regCenterName" name="regCenterName" placeholder="Menon Auto Care Workshop">
+            </div>
+            <!-- ✅ FIXED: Added name="regCenterAddress" -->
+            <div class="field">
+                <label for="regCenterAddress">Workshop address</label>
+                <input type="text" id="regCenterAddress" name="regCenterAddress" placeholder="Building, street, area">
+            </div>
+            <div class="field-row">
+                <!-- ✅ FIXED: Added name="regCenterCity" -->
+                <div class="field">
+                    <label for="regCenterCity">City</label>
+                    <input type="text" id="regCenterCity" name="regCenterCity" placeholder="Kochi">
+                </div>
+                <!-- ✅ FIXED: Added name="regCenterPincode" -->
+                <div class="field">
+                    <label for="regCenterPincode">Pincode</label>
+                    <input type="text" id="regCenterPincode" name="regCenterPincode" placeholder="682001">
+                </div>
+            </div>
+            <div class="field-row">
+                <!-- ✅ FIXED: Added name="regCenterReg" -->
+                <div class="field">
+                    <label for="regCenterReg">Business reg. / license no.</label>
+                    <input type="text" id="regCenterReg" name="regCenterReg" placeholder="32AAAAA0000A1Z5">
+                </div>
+                <!-- ✅ FIXED: Added name="regBays" -->
+                <div class="field">
+                    <label for="regBays">No. of service bays</label>
+                    <input type="number" id="regBays" name="regBays" placeholder="4" min="1">
+                </div>
+            </div>
+            <!-- ✅ FIXED: Added name="regSpecialization" -->
+            <div class="field">
+                <label for="regSpecialization">Primary specialization</label>
+                <select id="regSpecialization" name="regSpecialization">
+                    <option>General service &amp; maintenance</option>
+                    <option>Engine &amp; transmission repair</option>
+                    <option>Brakes &amp; suspension</option>
+                    <option>Electrical &amp; battery</option>
+                    <option>Denting, painting &amp; body work</option>
+                    <option>Tyres &amp; wheel alignment</option>
+                    <option>Multi-brand authorized service</option>
+                </select>
+            </div>
+            <div class="field-row">
+                <!-- ✅ FIXED: Added name="regOpenTime" -->
+                <div class="field">
+                    <label for="regOpenTime">Opening time</label>
+                    <input type="time" id="regOpenTime" name="regOpenTime" value="09:00">
+                </div>
+                <!-- ✅ FIXED: Added name="regCloseTime" -->
+                <div class="field">
+                    <label for="regCloseTime">Closing time</label>
+                    <input type="time" id="regCloseTime" name="regCloseTime" value="19:00">
+                </div>
+            </div>
+        </div>
+
+        <div class="field">
             <label for="regPass">Password</label>
-            <input type="password" id="regPass" placeholder="At least 8 characters" required>
-          </div>
-          <label class="checkline"><input type="checkbox" required style="margin-top:2px;"> I agree to the Terms of Service and Privacy Policy</label>
-          <button type="submit" class="btn btn-solid btn-lg" style="width:100%;">Create account</button>
-          <div class="form-msg" id="registerMsg">✓ Account created — let's add your vehicle next.</div>
-        </form>
-        <p class="switch-line">Already registered? <b data-switch-to="login">Log in</b></p>
-      </div>
+            <input type="password" id="regPass" name="regPass" placeholder="At least 8 characters" required>
+        </div>
+        <label class="checkline"><input type="checkbox" required style="margin-top:2px;"> I agree to the Terms of Service and Privacy Policy</label>
+        <label class="checkline" id="vendorAgreeLine" hidden><input type="checkbox" style="margin-top:2px;"> My business documents are genuine and available for verification</label>
+        <label class="checkline" id="centerAgreeLine" hidden><input type="checkbox" style="margin-top:2px;"> My workshop license and technician details are genuine and available for verification</label>
+        <button type="submit" class="btn btn-solid btn-lg" style="width:100%;" id="regSubmitBtn">Create account</button>
+        <div class="form-msg" id="registerMsg">✓ Account created — let's add your vehicle next.</div>
+    </form>
+    <p class="switch-line">Already registered? <b data-switch-to="login">Log in</b></p>
+</div>
 
     </div>
   </div>
 </div>
 
-<script>
+<<script>
 (function(){
   // ---- navbar scroll state ----
   const header = document.getElementById('siteHeader');
@@ -885,7 +1043,11 @@ footer{background:#fff; border-top:1px solid var(--line); padding:64px 0 28px;}
   document.querySelectorAll('[data-open-auth]').forEach(el => {
     el.addEventListener('click', (e) => {
       e.preventDefault();
-      openAuth(el.dataset.openAuth);
+      const which = el.dataset.openAuth;
+      openAuth(which);
+      if (which === 'register') {
+        setRole(el.dataset.role || 'customer');
+      }
     });
   });
   closeBtn.addEventListener('click', closeAuth);
@@ -896,15 +1058,76 @@ footer{background:#fff; border-top:1px solid var(--line); padding:64px 0 28px;}
     el.addEventListener('click', () => setAuthTab(el.dataset.switchTo));
   });
 
-  // ---- fake form submit feedback (no backend) ----
-  document.getElementById('loginForm').addEventListener('submit', (e) => {
-    e.preventDefault();
-    document.getElementById('loginMsg').classList.add('show');
-  });
-  document.getElementById('registerForm').addEventListener('submit', (e) => {
-    e.preventDefault();
-    document.getElementById('registerMsg').classList.add('show');
-  });
+  // ---- register: customer / vendor / service center role toggle ----
+  const roleBtns = document.querySelectorAll('.role-btn');
+  const vendorFields = document.getElementById('vendorFields');
+  const vendorAgreeLine = document.getElementById('vendorAgreeLine');
+  const serviceCenterFields = document.getElementById('serviceCenterFields');
+  const centerAgreeLine = document.getElementById('centerAgreeLine');
+  const regRoleInput = document.getElementById('regRole');
+  const regHeading = document.getElementById('regHeading');
+  const regSub = document.getElementById('regSub');
+  const regNameLabel = document.getElementById('regNameLabel');
+  const regSubmitBtn = document.getElementById('regSubmitBtn');
+  const registerMsg = document.getElementById('registerMsg');
+  const roleHint = document.getElementById('roleHint');
+  const vendorOnlyIds = ['regBusinessName','regBusinessAddress','regCity','regPincode'];
+  const centerOnlyIds = ['regCenterName','regCenterAddress','regCenterCity','regCenterPincode'];
+
+  const roleCopy = {
+    customer: {
+      heading: 'Create your account',
+      sub: 'Takes under two minutes. Add your vehicle right after.',
+      nameLabel: 'Full name',
+      submit: 'Create account',
+      msg: "✓ Account created — let's add your vehicle next.",
+      hint: ''
+    },
+    vendor: {
+      heading: 'Register your business',
+      sub: 'Tell us about your shop — every vendor is verified before listings go live.',
+      nameLabel: 'Owner / contact name',
+      submit: 'Submit for verification',
+      msg: '✓ Application submitted — our team will verify your business shortly.',
+      hint: 'For spare parts sellers listing products on the marketplace.'
+    },
+    service_center: {
+      heading: 'Register your service center',
+      sub: 'Tell us about your workshop — get listed so customers can book installations with you.',
+      nameLabel: 'Owner / manager name',
+      submit: 'Submit for verification',
+      msg: '✓ Application submitted — our team will verify your workshop shortly.',
+      hint: 'For garages and workshops that install parts and offer vehicle servicing.'
+    }
+  };
+
+  function setRole(role){
+    roleBtns.forEach(b => {
+      const active = b.dataset.role === role;
+      b.classList.toggle('active', active);
+      b.setAttribute('aria-selected', String(active));
+    });
+    regRoleInput.value = role;
+    const isVendor = role === 'vendor';
+    const isCenter = role === 'service_center';
+
+    vendorFields.hidden = !isVendor;
+    vendorAgreeLine.hidden = !isVendor;
+    vendorOnlyIds.forEach(id => { document.getElementById(id).required = isVendor; });
+
+    serviceCenterFields.hidden = !isCenter;
+    centerAgreeLine.hidden = !isCenter;
+    centerOnlyIds.forEach(id => { document.getElementById(id).required = isCenter; });
+
+    const copy = roleCopy[role] || roleCopy.customer;
+    regHeading.textContent = copy.heading;
+    regSub.textContent = copy.sub;
+    regNameLabel.textContent = copy.nameLabel;
+    regSubmitBtn.textContent = copy.submit;
+    registerMsg.textContent = copy.msg;
+    roleHint.textContent = copy.hint;
+  }
+  roleBtns.forEach(b => b.addEventListener('click', () => setRole(b.dataset.role)));
 })();
 </script>
 </body>
