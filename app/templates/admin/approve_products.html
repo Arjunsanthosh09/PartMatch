@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Products — Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root{
+          --white:#fff; --bg-soft:#f4faf5; --ink:#0f1e17; --ink-soft:#4c5f56;
+          --ink-faint:#8a9992; --green-700:#146c43; --green-600:#178a4c;
+          --green-500:#1fa85a; --green-050:#eefbf1; --line:#d9e9dd;
+          --line-strong:#b8d4c0;
+        }
+        *{box-sizing:border-box; margin:0; padding:0;}
+        body{font-family:'Inter',sans-serif; color:var(--ink); background:var(--bg-soft);}
+        .wrap{max-width:1240px; margin:0 auto; padding:0 32px;}
+        h1,h2{font-family:'Space Grotesk',sans-serif;}
+        table{width:100%; border-collapse:collapse; font-size:13px; background:#fff; border:1px solid var(--line);}
+        table th{text-align:left; padding:12px; border-bottom:2px solid var(--line); font-family:'IBM Plex Mono',monospace; font-size:11px; text-transform:uppercase; color:var(--ink-faint); background:var(--green-050);}
+        table td{padding:12px; border-bottom:1px solid var(--line);}
+        .badge{display:inline-block; padding:3px 10px; border-radius:2px; font-size:11px; font-weight:600;}
+        .badge-success{background:#d5f5e3; color:#27ae60;}
+        .badge-warning{background:#fef9e7; color:#e67e22;}
+        .badge-danger{background:#fadbd8; color:#e74c3c;}
+        .btn{font-family:'Inter',sans-serif; font-weight:600; font-size:14px; cursor:pointer; border:none; padding:8px 16px; border-radius:2px; display:inline-flex; align-items:center; gap:6px; text-decoration:none;}
+        .btn-ghost{background:transparent; color:var(--ink); border:1px solid var(--line-strong);}
+        .btn-solid{background:var(--green-700); color:#fff;}
+        .btn-sm{padding:6px 14px; font-size:12px;}
+        .btn-danger{background:#e74c3c; color:#fff; border:none;}
+        .eyebrow{display:inline-flex; align-items:center; gap:8px; font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--green-700); padding:6px 12px; border:1px dashed var(--line-strong); background:var(--green-050);}
+        .eyebrow::before{content:""; width:6px; height:6px; background:var(--green-500); border-radius:50%;}
+    </style>
+</head>
+<body>
+
+<div style="background:#fff; border-bottom:1px solid var(--line); padding:12px 0; margin-bottom:30px;">
+    <div class="wrap" style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+        <strong style="font-family:'Space Grotesk',sans-serif; font-size:18px; margin-right:20px;">⚙️ PartMatch Admin</strong>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-ghost btn-sm">🏠 Dashboard</a>
+        <a href="{{ url_for('admin_users') }}" class="btn btn-ghost btn-sm">👥 Users</a>
+        <a href="{{ url_for('admin_vendors') }}" class="btn btn-ghost btn-sm">🏪 Vendors</a>
+        <a href="{{ url_for('admin_service_centers') }}" class="btn btn-ghost btn-sm">🔧 Service Centers</a>
+        <a href="{{ url_for('admin_products') }}" class="btn btn-ghost btn-sm">📦 Products</a>
+        <a href="{{ url_for('admin_reports') }}" class="btn btn-ghost btn-sm">📈 Reports</a>
+        <a href="{{ url_for('logout') }}" class="btn btn-solid btn-sm" style="margin-left:auto;">🚪 Logout</a>
+    </div>
+</div>
+
+<div class="wrap">
+    <div style="margin-bottom:24px;">
+        <span class="eyebrow">Admin Panel</span>
+        <h2 style="font-size:28px; margin-top:8px;">Manage Products</h2>
+        <p style="color:var(--ink-soft); margin-top:6px;">Approve or reject product listings from vendors.</p>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Vendor</th>
+                <th>Category</th>
+                <th>Brand</th>
+                <th>Price</th>
+                <th>Stock</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for product in products %}
+            <tr>
+                <td>
+                    <strong>{{ product.name }}</strong>
+                    {% if product.part_number %}
+                    <br><small style="color:var(--ink-faint);">Part #: {{ product.part_number }}</small>
+                    {% endif %}
+                </td>
+                <td>{{ product.vendor_name }}</td>
+                <td>{{ product.category_name or 'Uncategorized' }}</td>
+                <td>{{ product.brand or 'N/A' }}</td>
+                <td>₹{{ '%.2f'|format(product.price) }}</td>
+                <td>{{ product.stock_quantity }}</td>
+                <td>
+                    {% if product.is_approved %}
+                    <span class="badge badge-success">✓ Approved</span>
+                    {% else %}
+                    <span class="badge badge-warning">⏳ Pending</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if not product.is_approved %}
+                    <a href="{{ url_for('admin_product_action', product_id=product.id, action='approve') }}" 
+                       class="btn btn-solid btn-sm" style="margin-right:6px;">✓ Approve</a>
+                    {% endif %}
+                    <a href="{{ url_for('admin_product_action', product_id=product.id, action='reject') }}" 
+                       class="btn btn-danger btn-sm"
+                       onclick="return confirm('Delete this product permanently?')">✕ Remove</a>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="8" style="text-align:center; padding:40px;">No products listed yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+</body>
+</html>

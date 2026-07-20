@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports — Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root{
+          --white:#fff; --bg-soft:#f4faf5; --ink:#0f1e17; --ink-soft:#4c5f56;
+          --ink-faint:#8a9992; --green-700:#146c43; --green-600:#178a4c;
+          --green-500:#1fa85a; --green-050:#eefbf1; --line:#d9e9dd;
+          --line-strong:#b8d4c0;
+        }
+        *{box-sizing:border-box; margin:0; padding:0;}
+        body{font-family:'Inter',sans-serif; color:var(--ink); background:var(--bg-soft);}
+        .wrap{max-width:1240px; margin:0 auto; padding:0 32px;}
+        h1,h2,h3{font-family:'Space Grotesk',sans-serif;}
+        table{width:100%; border-collapse:collapse; font-size:13px; background:#fff; border:1px solid var(--line);}
+        table th{text-align:left; padding:12px; border-bottom:2px solid var(--line); font-family:'IBM Plex Mono',monospace; font-size:11px; text-transform:uppercase; color:var(--ink-faint); background:var(--green-050);}
+        table td{padding:12px; border-bottom:1px solid var(--line);}
+        .badge{display:inline-block; padding:3px 10px; border-radius:2px; font-size:11px; font-weight:600;}
+        .badge-success{background:#d5f5e3; color:#27ae60;}
+        .badge-warning{background:#fef9e7; color:#e67e22;}
+        .badge-danger{background:#fadbd8; color:#e74c3c;}
+        .badge-info{background:#dbeafe; color:#2980b9;}
+        .btn{font-family:'Inter',sans-serif; font-weight:600; font-size:14px; cursor:pointer; border:none; padding:8px 16px; border-radius:2px; display:inline-flex; align-items:center; gap:6px; text-decoration:none;}
+        .btn-ghost{background:transparent; color:var(--ink); border:1px solid var(--line-strong);}
+        .btn-solid{background:var(--green-700); color:#fff;}
+        .btn-sm{padding:6px 14px; font-size:12px;}
+        .eyebrow{display:inline-flex; align-items:center; gap:8px; font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--green-700); padding:6px 12px; border:1px dashed var(--line-strong); background:var(--green-050);}
+        .eyebrow::before{content:""; width:6px; height:6px; background:var(--green-500); border-radius:50%;}
+        .panel{background:#fff; border:1px solid var(--line); border-radius:4px; overflow:hidden; margin-bottom:24px;}
+        .panel-header{padding:16px 20px; border-bottom:1px solid var(--line); font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:16px; background:var(--green-050);}
+        .panel-body{padding:20px;}
+        .chart-bar{display:flex; align-items:end; gap:4px; height:200px;}
+        .chart-bar .bar{flex:1; background:var(--green-500); min-width:30px; border-radius:4px 4px 0 0; position:relative;}
+        .chart-bar .bar:hover{opacity:0.8;}
+        .bar-label{position:absolute; top:-20px; left:50%; transform:translateX(-50%); font-size:10px; font-weight:600; color:var(--green-700);}
+    </style>
+</head>
+<body>
+
+<div style="background:#fff; border-bottom:1px solid var(--line); padding:12px 0; margin-bottom:30px;">
+    <div class="wrap" style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+        <strong style="font-family:'Space Grotesk',sans-serif; font-size:18px; margin-right:20px;">⚙️ PartMatch Admin</strong>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-ghost btn-sm">🏠 Dashboard</a>
+        <a href="{{ url_for('admin_users') }}" class="btn btn-ghost btn-sm">👥 Users</a>
+        <a href="{{ url_for('admin_vendors') }}" class="btn btn-ghost btn-sm">🏪 Vendors</a>
+        <a href="{{ url_for('admin_service_centers') }}" class="btn btn-ghost btn-sm">🔧 Service Centers</a>
+        <a href="{{ url_for('admin_products') }}" class="btn btn-ghost btn-sm">📦 Products</a>
+        <a href="{{ url_for('admin_reports') }}" class="btn btn-ghost btn-sm">📈 Reports</a>
+        <a href="{{ url_for('logout') }}" class="btn btn-solid btn-sm" style="margin-left:auto;">🚪 Logout</a>
+    </div>
+</div>
+
+<div class="wrap">
+    <div style="margin-bottom:24px;">
+        <span class="eyebrow">Admin Panel</span>
+        <h2 style="font-size:28px; margin-top:8px;">Reports & Analytics</h2>
+        <p style="color:var(--ink-soft); margin-top:6px;">Platform performance and sales data.</p>
+    </div>
+
+    <!-- Monthly Revenue Chart -->
+    <div class="panel">
+        <div class="panel-header">📊 Monthly Revenue (Last 12 Months)</div>
+        <div class="panel-body">
+            {% if monthly_data %}
+            <div class="chart-bar">
+                {% set max_revenue = monthly_data|map(attribute='revenue')|max %}
+                {% for month in monthly_data|reverse %}
+                <div class="bar" style="height: {{ (month.revenue / max_revenue * 100) if max_revenue > 0 else 5 }}%;">
+                    <span class="bar-label">₹{{ '%.0f'|format(month.revenue) }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:11px; color:var(--ink-faint);">
+                {% for month in monthly_data|reverse %}
+                <span>{{ month.month }}</span>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p style="color:var(--ink-faint); text-align:center; padding:40px;">No revenue data yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Monthly Revenue Table -->
+    <div class="panel">
+        <div class="panel-header">📋 Monthly Breakdown</div>
+        <div class="panel-body">
+            <table>
+                <thead>
+                    <tr><th>Month</th><th>Orders</th><th>Revenue</th></tr>
+                </thead>
+                <tbody>
+                    {% for month in monthly_data %}
+                    <tr>
+                        <td><strong>{{ month.month }}</strong></td>
+                        <td>{{ month.orders }}</td>
+                        <td>₹{{ '%.2f'|format(month.revenue) }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="3" style="text-align:center;">No data available.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Order Status Distribution -->
+    <div class="panel">
+        <div class="panel-header">📦 Order Status Distribution</div>
+        <div class="panel-body">
+            <table>
+                <thead>
+                    <tr><th>Status</th><th>Count</th></tr>
+                </thead>
+                <tbody>
+                    {% for status in order_status %}
+                    <tr>
+                        <td>
+                            <span class="badge {% if status.order_status == 'delivered' %}badge-success{% elif status.order_status == 'cancelled' %}badge-danger{% elif status.order_status == 'pending' %}badge-warning{% else %}badge-info{% endif %}">
+                                {{ status.order_status }}
+                            </span>
+                        </td>
+                        <td><strong>{{ status.count }}</strong></td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="2" style="text-align:center;">No orders yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

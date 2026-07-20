@@ -1,943 +1,2382 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PartMatch — Smart Vehicle Spare Parts &amp; Maintenance Platform</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-:root{
-  --white:#ffffff;
-  --bg-soft:#f4faf5;
-  --ink:#0f1e17;
-  --ink-soft:#4c5f56;
-  --ink-faint:#8a9992;
-  --green-900:#0d3b2c;
-  --green-700:#146c43;
-  --green-600:#178a4c;
-  --green-500:#1fa85a;
-  --green-100:#dcf5e3;
-  --green-050:#eefbf1;
-  --line:#d9e9dd;
-  --line-strong:#b8d4c0;
-  --shadow: 0 10px 30px -12px rgba(13,59,44,0.18);
-  --radius: 2px;
-  --maxw: 1240px;
-}
-*{box-sizing:border-box; margin:0; padding:0;}
-html{scroll-behavior:smooth;}
-body{
-  font-family:'Inter',sans-serif;
-  color:var(--ink);
-  background:var(--white);
-  -webkit-font-smoothing:antialiased;
-  overflow-x:hidden;
-}
-h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif; letter-spacing:-0.01em; color:var(--ink);}
-.mono{font-family:'IBM Plex Mono',monospace;}
-a{color:inherit; text-decoration:none;}
-img{max-width:100%; display:block;}
-.wrap{max-width:var(--maxw); margin:0 auto; padding:0 32px;}
-::selection{background:var(--green-100); color:var(--green-900);}
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      PartMatch — Smart Vehicle Spare Parts &amp; Maintenance Platform
+    </title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --white: #ffffff;
+        --bg-soft: #f4faf5;
+        --ink: #0f1e17;
+        --ink-soft: #4c5f56;
+        --ink-faint: #8a9992;
+        --green-900: #0d3b2c;
+        --green-700: #146c43;
+        --green-600: #178a4c;
+        --green-500: #1fa85a;
+        --green-100: #dcf5e3;
+        --green-050: #eefbf1;
+        --line: #d9e9dd;
+        --line-strong: #b8d4c0;
+        --shadow: 0 10px 30px -12px rgba(13, 59, 44, 0.18);
+        --radius: 2px;
+        --maxw: 1240px;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        font-family: "Inter", sans-serif;
+        color: var(--ink);
+        background: var(--white);
+        -webkit-font-smoothing: antialiased;
+        overflow-x: hidden;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        font-family: "Space Grotesk", sans-serif;
+        letter-spacing: -0.01em;
+        color: var(--ink);
+      }
+      .mono {
+        font-family: "IBM Plex Mono", monospace;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+      img {
+        max-width: 100%;
+        display: block;
+      }
+      .wrap {
+        max-width: var(--maxw);
+        margin: 0 auto;
+        padding: 0 32px;
+      }
+      ::selection {
+        background: var(--green-100);
+        color: var(--green-900);
+      }
 
-/* ---------- utility: reveal on scroll ---------- */
-.reveal{opacity:0; transform:translateY(24px); transition:opacity .7s ease, transform .7s ease;}
-.reveal.in{opacity:1; transform:translateY(0);}
+      /* ---------- utility: reveal on scroll ---------- */
+      .reveal {
+        opacity: 0;
+        transform: translateY(24px);
+        transition:
+          opacity 0.7s ease,
+          transform 0.7s ease;
+      }
+      .reveal.in {
+        opacity: 1;
+        transform: translateY(0);
+      }
 
-/* ---------- eyebrow / labels ---------- */
-.eyebrow{
-  display:inline-flex; align-items:center; gap:8px;
-  font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:.14em; text-transform:uppercase;
-  color:var(--green-700); font-weight:500;
-  padding:6px 12px 6px 10px;
-  border:1px dashed var(--line-strong);
-  background:var(--green-050);
-}
-.eyebrow::before{content:""; width:6px; height:6px; background:var(--green-500); border-radius:50%; box-shadow:0 0 0 3px var(--green-100);}
+      /* ---------- eyebrow / labels ---------- */
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 12px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--green-700);
+        font-weight: 500;
+        padding: 6px 12px 6px 10px;
+        border: 1px dashed var(--line-strong);
+        background: var(--green-050);
+      }
+      .eyebrow::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        background: var(--green-500);
+        border-radius: 50%;
+        box-shadow: 0 0 0 3px var(--green-100);
+      }
 
-/* ---------- reticle card corners (signature motif) ---------- */
-.reticle{position:relative;}
-.reticle::before,.reticle::after,
-.reticle .rc-br,.reticle .rc-bl{
-  content:""; position:absolute; width:14px; height:14px; border:1.5px solid var(--green-600);
-  opacity:.55; transition:opacity .3s ease, width .3s ease, height .3s ease;
-}
-.reticle::before{top:-1px; left:-1px; border-right:none; border-bottom:none;}
-.reticle::after{top:-1px; right:-1px; border-left:none; border-bottom:none;}
-.reticle .rc-bl{bottom:-1px; left:-1px; border-right:none; border-top:none;}
-.reticle .rc-br{bottom:-1px; right:-1px; border-left:none; border-top:none;}
-.reticle:hover::before,.reticle:hover::after,.reticle:hover .rc-bl,.reticle:hover .rc-br{opacity:1; width:20px; height:20px;}
+      /* ---------- reticle card corners (signature motif) ---------- */
+      .reticle {
+        position: relative;
+      }
+      .reticle::before,
+      .reticle::after,
+      .reticle .rc-br,
+      .reticle .rc-bl {
+        content: "";
+        position: absolute;
+        width: 14px;
+        height: 14px;
+        border: 1.5px solid var(--green-600);
+        opacity: 0.55;
+        transition:
+          opacity 0.3s ease,
+          width 0.3s ease,
+          height 0.3s ease;
+      }
+      .reticle::before {
+        top: -1px;
+        left: -1px;
+        border-right: none;
+        border-bottom: none;
+      }
+      .reticle::after {
+        top: -1px;
+        right: -1px;
+        border-left: none;
+        border-bottom: none;
+      }
+      .reticle .rc-bl {
+        bottom: -1px;
+        left: -1px;
+        border-right: none;
+        border-top: none;
+      }
+      .reticle .rc-br {
+        bottom: -1px;
+        right: -1px;
+        border-left: none;
+        border-top: none;
+      }
+      .reticle:hover::before,
+      .reticle:hover::after,
+      .reticle:hover .rc-bl,
+      .reticle:hover .rc-br {
+        opacity: 1;
+        width: 20px;
+        height: 20px;
+      }
 
-/* ================= NAVBAR ================= */
-header{
-  position:fixed; top:0; left:0; right:0; z-index:1000;
-  background:rgba(255,255,255,0.7);
-  backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
-  border-bottom:1px solid transparent;
-  transition:border-color .35s ease, background .35s ease, box-shadow .35s ease;
-}
-header.scrolled{background:rgba(255,255,255,0.92); border-bottom-color:var(--line); box-shadow:0 4px 24px -8px rgba(13,59,44,0.08);}
-.navrow{display:flex; align-items:center; justify-content:space-between; height:76px;}
-.brand{display:flex; align-items:center; gap:10px; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:19px;}
-.brand-mark{width:34px; height:34px; flex-shrink:0;}
-.brand small{display:block; font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:.16em; color:var(--ink-faint); font-weight:400; text-transform:uppercase; margin-top:1px;}
-.navlinks{display:flex; align-items:center; gap:36px; list-style:none;}
-.navlinks a{
-  font-size:14.5px; font-weight:500; color:var(--ink-soft); position:relative; padding:6px 0;
-  transition:color .25s ease;
-}
-.navlinks a::after{
-  content:""; position:absolute; left:0; bottom:0; height:2px; width:0; background:var(--green-600);
-  transition:width .3s cubic-bezier(.4,0,.2,1);
-}
-.navlinks a:hover{color:var(--ink);}
-.navlinks a:hover::after{width:100%;}
-.navcta{display:flex; align-items:center; gap:12px;}
-.btn{
-  font-family:'Inter',sans-serif; font-weight:600; font-size:14px; cursor:pointer; border:none;
-  padding:11px 20px; border-radius:2px; transition:all .28s cubic-bezier(.4,0,.2,1); position:relative; overflow:hidden;
-  display:inline-flex; align-items:center; justify-content:center; gap:8px; white-space:nowrap;
-}
-.btn-ghost{background:transparent; color:var(--ink); border:1px solid var(--line-strong);}
-.btn-ghost:hover{border-color:var(--green-600); color:var(--green-700); background:var(--green-050);}
-.btn-solid{background:var(--green-700); color:#fff; box-shadow:0 1px 0 rgba(0,0,0,0.05);}
-.btn-solid:hover{background:var(--green-900); transform:translateY(-1px); box-shadow:0 8px 20px -6px rgba(13,59,44,0.45);}
-.btn-solid:active{transform:translateY(0);}
-.btn-lg{padding:15px 28px; font-size:15px;}
-.hamburger{display:none; flex-direction:column; gap:5px; cursor:pointer; background:none; border:none;}
-.hamburger span{width:24px; height:2px; background:var(--ink); transition:all .3s ease;}
+      /* ================= NAVBAR ================= */
+      header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border-bottom: 1px solid transparent;
+        transition:
+          border-color 0.35s ease,
+          background 0.35s ease,
+          box-shadow 0.35s ease;
+      }
+      header.scrolled {
+        background: rgba(255, 255, 255, 0.92);
+        border-bottom-color: var(--line);
+        box-shadow: 0 4px 24px -8px rgba(13, 59, 44, 0.08);
+      }
+      .navrow {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 76px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-family: "Space Grotesk", sans-serif;
+        font-weight: 700;
+        font-size: 19px;
+      }
+      .brand-mark {
+        width: 34px;
+        height: 34px;
+        flex-shrink: 0;
+      }
+      .brand small {
+        display: block;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 9px;
+        letter-spacing: 0.16em;
+        color: var(--ink-faint);
+        font-weight: 400;
+        text-transform: uppercase;
+        margin-top: 1px;
+      }
+      .navlinks {
+        display: flex;
+        align-items: center;
+        gap: 36px;
+        list-style: none;
+      }
+      .navlinks a {
+        font-size: 14.5px;
+        font-weight: 500;
+        color: var(--ink-soft);
+        position: relative;
+        padding: 6px 0;
+        transition: color 0.25s ease;
+      }
+      .navlinks a::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        height: 2px;
+        width: 0;
+        background: var(--green-600);
+        transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .navlinks a:hover {
+        color: var(--ink);
+      }
+      .navlinks a:hover::after {
+        width: 100%;
+      }
+      .navcta {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .btn {
+        font-family: "Inter", sans-serif;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        border: none;
+        padding: 11px 20px;
+        border-radius: 2px;
+        transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        white-space: nowrap;
+      }
+      .btn-ghost {
+        background: transparent;
+        color: var(--ink);
+        border: 1px solid var(--line-strong);
+      }
+      .btn-ghost:hover {
+        border-color: var(--green-600);
+        color: var(--green-700);
+        background: var(--green-050);
+      }
+      .btn-solid {
+        background: var(--green-700);
+        color: #fff;
+        box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05);
+      }
+      .btn-solid:hover {
+        background: var(--green-900);
+        transform: translateY(-1px);
+        box-shadow: 0 8px 20px -6px rgba(13, 59, 44, 0.45);
+      }
+      .btn-solid:active {
+        transform: translateY(0);
+      }
+      .btn-lg {
+        padding: 15px 28px;
+        font-size: 15px;
+      }
+      .hamburger {
+        display: none;
+        flex-direction: column;
+        gap: 5px;
+        cursor: pointer;
+        background: none;
+        border: none;
+      }
+      .hamburger span {
+        width: 24px;
+        height: 2px;
+        background: var(--ink);
+        transition: all 0.3s ease;
+      }
 
-/* mobile nav */
-.mobilenav{
-  position:fixed; top:76px; left:0; right:0; background:#fff; border-bottom:1px solid var(--line);
-  padding:20px 32px 28px; display:flex; flex-direction:column; gap:18px;
-  transform:translateY(-120%); opacity:0; transition:transform .4s cubic-bezier(.4,0,.2,1), opacity .3s ease;
-  z-index:999;
-}
-.mobilenav.open{transform:translateY(0); opacity:1;}
-.mobilenav a{font-size:15px; font-weight:500; color:var(--ink-soft);}
-.mobilenav .navcta{margin-top:8px;}
+      /* mobile nav */
+      .mobilenav {
+        position: fixed;
+        top: 76px;
+        left: 0;
+        right: 0;
+        background: #fff;
+        border-bottom: 1px solid var(--line);
+        padding: 20px 32px 28px;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+        transform: translateY(-120%);
+        opacity: 0;
+        transition:
+          transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+          opacity 0.3s ease;
+        z-index: 999;
+      }
+      .mobilenav.open {
+        transform: translateY(0);
+        opacity: 1;
+      }
+      .mobilenav a {
+        font-size: 15px;
+        font-weight: 500;
+        color: var(--ink-soft);
+      }
+      .mobilenav .navcta {
+        margin-top: 8px;
+      }
 
-/* ================= HERO ================= */
-.hero{
-  position:relative; padding:168px 0 90px; background:
-    linear-gradient(180deg, var(--bg-soft) 0%, #ffffff 78%);
-  overflow:hidden;
-}
-.hero::before{
-  content:""; position:absolute; inset:0; opacity:.5; pointer-events:none;
-  background-image:
-    linear-gradient(var(--line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--line) 1px, transparent 1px);
-  background-size:64px 64px;
-  mask-image:radial-gradient(ellipse 70% 60% at 50% 0%, #000 40%, transparent 90%);
-}
-.hero-grid{position:relative; display:grid; grid-template-columns:1.02fr 1fr; gap:40px; align-items:center;}
-.hero-copy .eyebrow{margin-bottom:22px;}
-.hero h1{font-size:clamp(36px,4.6vw,58px); line-height:1.06; font-weight:700; margin-bottom:22px;}
-.hero h1 em{font-style:normal; color:var(--green-700); position:relative; white-space:nowrap;}
-.hero h1 em::after{
-  content:""; position:absolute; left:0; right:0; bottom:6px; height:10px; background:var(--green-100); z-index:-1;
-}
-.hero p.lead{font-size:17px; line-height:1.65; color:var(--ink-soft); max-width:460px; margin-bottom:34px;}
-.hero-actions{display:flex; gap:14px; flex-wrap:wrap; margin-bottom:38px;}
-.hero-meta{display:flex; gap:28px; flex-wrap:wrap; padding-top:26px; border-top:1px dashed var(--line-strong);}
-.hero-meta div{display:flex; flex-direction:column; gap:2px;}
-.hero-meta strong{font-family:'Space Grotesk',sans-serif; font-size:22px; color:var(--green-800,var(--green-700));}
-.hero-meta span{font-size:12px; color:var(--ink-faint); font-family:'IBM Plex Mono',monospace; text-transform:uppercase; letter-spacing:.06em;}
+      /* ================= HERO ================= */
+      .hero {
+        position: relative;
+        padding: 168px 0 90px;
+        background: linear-gradient(180deg, var(--bg-soft) 0%, #ffffff 78%);
+        overflow: hidden;
+      }
+      .hero::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        opacity: 0.5;
+        pointer-events: none;
+        background-image:
+          linear-gradient(var(--line) 1px, transparent 1px),
+          linear-gradient(90deg, var(--line) 1px, transparent 1px);
+        background-size: 64px 64px;
+        mask-image: radial-gradient(
+          ellipse 70% 60% at 50% 0%,
+          #000 40%,
+          transparent 90%
+        );
+      }
+      .hero-grid {
+        position: relative;
+        display: grid;
+        grid-template-columns: 1.02fr 1fr;
+        gap: 40px;
+        align-items: center;
+      }
+      .hero-copy .eyebrow {
+        margin-bottom: 22px;
+      }
+      .hero h1 {
+        font-size: clamp(36px, 4.6vw, 58px);
+        line-height: 1.06;
+        font-weight: 700;
+        margin-bottom: 22px;
+      }
+      .hero h1 em {
+        font-style: normal;
+        color: var(--green-700);
+        position: relative;
+        white-space: nowrap;
+      }
+      .hero h1 em::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 6px;
+        height: 10px;
+        background: var(--green-100);
+        z-index: -1;
+      }
+      .hero p.lead {
+        font-size: 17px;
+        line-height: 1.65;
+        color: var(--ink-soft);
+        max-width: 460px;
+        margin-bottom: 34px;
+      }
+      .hero-actions {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+        margin-bottom: 38px;
+      }
+      .hero-meta {
+        display: flex;
+        gap: 28px;
+        flex-wrap: wrap;
+        padding-top: 26px;
+        border-top: 1px dashed var(--line-strong);
+      }
+      .hero-meta div {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .hero-meta strong {
+        font-family: "Space Grotesk", sans-serif;
+        font-size: 22px;
+        color: var(--green-800, var(--green-700));
+      }
+      .hero-meta span {
+        font-size: 12px;
+        color: var(--ink-faint);
+        font-family: "IBM Plex Mono", monospace;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
 
-/* --- hero diagnostic visual --- */
-.hero-visual{position:relative;}
-.scanwrap{position:relative; background:#fff; border:1px solid var(--line-strong); box-shadow:var(--shadow);}
-.scan-topbar{
-  display:flex; align-items:center; justify-content:space-between; padding:10px 16px;
-  border-bottom:1px dashed var(--line-strong); font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ink-faint);
-  letter-spacing:.06em;
-}
-.scan-topbar .dot{width:7px; height:7px; border-radius:50%; background:var(--green-500); display:inline-block; margin-right:6px; animation:pulseDot 1.8s ease-in-out infinite;}
-@keyframes pulseDot{0%,100%{opacity:1;} 50%{opacity:.35;}}
-.scan-canvas{position:relative; overflow:hidden;}
-.scan-canvas svg{width:100%; height:auto; display:block;}
-.scanline{
-  position:absolute; left:0; right:0; height:2px;
-  background:linear-gradient(90deg, transparent, var(--green-500) 20%, var(--green-500) 80%, transparent);
-  box-shadow:0 0 16px 2px rgba(31,168,90,0.55);
-  animation:sweep 3.2s cubic-bezier(.65,0,.35,1) infinite;
-  top:8%;
-}
-@keyframes sweep{
-  0%{top:6%; opacity:0;}
-  8%{opacity:1;}
-  48%{top:92%; opacity:1;}
-  56%{opacity:0;}
-  100%{top:92%; opacity:0;}
-}
-.node{transform-box:fill-box; transform-origin:center;}
-.node circle.pulse{animation:nodePulse 2.6s ease-in-out infinite;}
-.node:nth-of-type(2) circle.pulse{animation-delay:.4s;}
-.node:nth-of-type(3) circle.pulse{animation-delay:.9s;}
-@keyframes nodePulse{
-  0%{r:4; opacity:.9;}
-  70%{r:15; opacity:0;}
-  100%{r:15; opacity:0;}
-}
-.scan-footer{display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-top:1px dashed var(--line-strong);}
-.match-pill{
-  display:flex; align-items:center; gap:8px; font-family:'IBM Plex Mono',monospace; font-size:12px;
-  background:var(--green-050); border:1px solid var(--line-strong); padding:6px 10px; color:var(--green-800,var(--green-700));
-}
-.match-pill b{color:var(--green-700); font-size:13px;}
-.float-card{
-  position:absolute; background:#fff; border:1px solid var(--line-strong); box-shadow:var(--shadow);
-  padding:10px 13px; font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--ink-soft);
-  display:flex; align-items:center; gap:8px; animation:floaty 5s ease-in-out infinite;
-}
-.float-card b{color:var(--green-700); font-family:'Inter',sans-serif; font-size:12px;}
-.float-card.fc1{top:14%; left:-9%; animation-delay:0s;}
-.float-card.fc2{bottom:16%; right:-8%; animation-delay:1.3s;}
-@keyframes floaty{0%,100%{transform:translateY(0);} 50%{transform:translateY(-8px);}}
-.check-ic{width:14px; height:14px; flex-shrink:0;}
+      /* --- hero diagnostic visual --- */
+      .hero-visual {
+        position: relative;
+      }
+      .scanwrap {
+        position: relative;
+        background: #fff;
+        border: 1px solid var(--line-strong);
+        box-shadow: var(--shadow);
+      }
+      .scan-topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 16px;
+        border-bottom: 1px dashed var(--line-strong);
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 11px;
+        color: var(--ink-faint);
+        letter-spacing: 0.06em;
+      }
+      .scan-topbar .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--green-500);
+        display: inline-block;
+        margin-right: 6px;
+        animation: pulseDot 1.8s ease-in-out infinite;
+      }
+      @keyframes pulseDot {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.35;
+        }
+      }
+      .scan-canvas {
+        position: relative;
+        overflow: hidden;
+      }
+      .scan-canvas svg {
+        width: 100%;
+        height: auto;
+        display: block;
+      }
+      .scanline {
+        position: absolute;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          var(--green-500) 20%,
+          var(--green-500) 80%,
+          transparent
+        );
+        box-shadow: 0 0 16px 2px rgba(31, 168, 90, 0.55);
+        animation: sweep 3.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+        top: 8%;
+      }
+      @keyframes sweep {
+        0% {
+          top: 6%;
+          opacity: 0;
+        }
+        8% {
+          opacity: 1;
+        }
+        48% {
+          top: 92%;
+          opacity: 1;
+        }
+        56% {
+          opacity: 0;
+        }
+        100% {
+          top: 92%;
+          opacity: 0;
+        }
+      }
+      .node {
+        transform-box: fill-box;
+        transform-origin: center;
+      }
+      .node circle.pulse {
+        animation: nodePulse 2.6s ease-in-out infinite;
+      }
+      .node:nth-of-type(2) circle.pulse {
+        animation-delay: 0.4s;
+      }
+      .node:nth-of-type(3) circle.pulse {
+        animation-delay: 0.9s;
+      }
+      @keyframes nodePulse {
+        0% {
+          r: 4;
+          opacity: 0.9;
+        }
+        70% {
+          r: 15;
+          opacity: 0;
+        }
+        100% {
+          r: 15;
+          opacity: 0;
+        }
+      }
+      .scan-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 16px;
+        border-top: 1px dashed var(--line-strong);
+      }
+      .match-pill {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 12px;
+        background: var(--green-050);
+        border: 1px solid var(--line-strong);
+        padding: 6px 10px;
+        color: var(--green-800, var(--green-700));
+      }
+      .match-pill b {
+        color: var(--green-700);
+        font-size: 13px;
+      }
+      .float-card {
+        position: absolute;
+        background: #fff;
+        border: 1px solid var(--line-strong);
+        box-shadow: var(--shadow);
+        padding: 10px 13px;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 11.5px;
+        color: var(--ink-soft);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        animation: floaty 5s ease-in-out infinite;
+      }
+      .float-card b {
+        color: var(--green-700);
+        font-family: "Inter", sans-serif;
+        font-size: 12px;
+      }
+      .float-card.fc1 {
+        top: 14%;
+        left: -9%;
+        animation-delay: 0s;
+      }
+      .float-card.fc2 {
+        bottom: 16%;
+        right: -8%;
+        animation-delay: 1.3s;
+      }
+      @keyframes floaty {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-8px);
+        }
+      }
+      .check-ic {
+        width: 14px;
+        height: 14px;
+        flex-shrink: 0;
+      }
 
-/* ================= STATS STRIP ================= */
-.stats{padding:0 0 90px;}
-.stats-grid{display:grid; grid-template-columns:repeat(4,1fr); border:1px solid var(--line);}
-.stat-cell{padding:26px 24px; border-right:1px solid var(--line); position:relative;}
-.stat-cell:last-child{border-right:none;}
-.stat-cell strong{display:block; font-family:'Space Grotesk',sans-serif; font-size:30px; color:var(--green-700); margin-bottom:4px;}
-.stat-cell span{font-size:13px; color:var(--ink-soft);}
+      /* ================= STATS STRIP ================= */
+      .stats {
+        padding: 0 0 90px;
+      }
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        border: 1px solid var(--line);
+      }
+      .stat-cell {
+        padding: 26px 24px;
+        border-right: 1px solid var(--line);
+        position: relative;
+      }
+      .stat-cell:last-child {
+        border-right: none;
+      }
+      .stat-cell strong {
+        display: block;
+        font-family: "Space Grotesk", sans-serif;
+        font-size: 30px;
+        color: var(--green-700);
+        margin-bottom: 4px;
+      }
+      .stat-cell span {
+        font-size: 13px;
+        color: var(--ink-soft);
+      }
 
-/* ================= SECTION HEAD ================= */
-.section{padding:100px 0;}
-.section.alt{background:var(--bg-soft);}
-.sec-head{max-width:640px; margin-bottom:56px;}
-.sec-head .eyebrow{margin-bottom:18px;}
-.sec-head h2{font-size:clamp(28px,3.4vw,40px); font-weight:700; margin-bottom:14px; line-height:1.15;}
-.sec-head p{color:var(--ink-soft); font-size:16px; line-height:1.65;}
+      /* ================= SECTION HEAD ================= */
+      .section {
+        padding: 100px 0;
+      }
+      .section.alt {
+        background: var(--bg-soft);
+      }
+      .sec-head {
+        max-width: 640px;
+        margin-bottom: 56px;
+      }
+      .sec-head .eyebrow {
+        margin-bottom: 18px;
+      }
+      .sec-head h2 {
+        font-size: clamp(28px, 3.4vw, 40px);
+        font-weight: 700;
+        margin-bottom: 14px;
+        line-height: 1.15;
+      }
+      .sec-head p {
+        color: var(--ink-soft);
+        font-size: 16px;
+        line-height: 1.65;
+      }
 
-/* ================= HOW IT WORKS ================= */
-.steps{display:grid; grid-template-columns:repeat(3,1fr); gap:0; border-top:1px solid var(--line);}
-.step{padding:34px 30px 34px 0; border-right:1px dashed var(--line-strong); position:relative;}
-.step:last-child{border-right:none;}
-.step .num{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--green-600); letter-spacing:.1em; display:block; margin-bottom:18px;}
-.step h3{font-size:19px; margin-bottom:10px; font-weight:600;}
-.step p{font-size:14.5px; color:var(--ink-soft); line-height:1.6; margin-bottom:16px;}
-.step-line{position:absolute; top:0; left:0; height:2px; width:0; background:var(--green-500); transition:width .8s ease;}
-.step.in .step-line{width:100%;}
+      /* ================= HOW IT WORKS ================= */
+      .steps {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0;
+        border-top: 1px solid var(--line);
+      }
+      .step {
+        padding: 34px 30px 34px 0;
+        border-right: 1px dashed var(--line-strong);
+        position: relative;
+      }
+      .step:last-child {
+        border-right: none;
+      }
+      .step .num {
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 12px;
+        color: var(--green-600);
+        letter-spacing: 0.1em;
+        display: block;
+        margin-bottom: 18px;
+      }
+      .step h3 {
+        font-size: 19px;
+        margin-bottom: 10px;
+        font-weight: 600;
+      }
+      .step p {
+        font-size: 14.5px;
+        color: var(--ink-soft);
+        line-height: 1.6;
+        margin-bottom: 16px;
+      }
+      .step-line {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 2px;
+        width: 0;
+        background: var(--green-500);
+        transition: width 0.8s ease;
+      }
+      .step.in .step-line {
+        width: 100%;
+      }
 
-/* ================= FEATURES ================= */
-.feat-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--line); border:1px solid var(--line);}
-.feat-card{background:#fff; padding:32px 28px; transition:background .3s ease;}
-.feat-card:hover{background:var(--green-050);}
-.feat-ic{width:42px; height:42px; margin-bottom:20px; color:var(--green-700);}
-.feat-card h3{font-size:17px; margin-bottom:10px; font-weight:600;}
-.feat-card p{font-size:14px; color:var(--ink-soft); line-height:1.6;}
-.feat-tag{display:inline-block; margin-top:16px; font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--ink-faint); letter-spacing:.08em;}
+      /* ================= FEATURES ================= */
+      .feat-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1px;
+        background: var(--line);
+        border: 1px solid var(--line);
+      }
+      .feat-card {
+        background: #fff;
+        padding: 32px 28px;
+        transition: background 0.3s ease;
+      }
+      .feat-card:hover {
+        background: var(--green-050);
+      }
+      .feat-ic {
+        width: 42px;
+        height: 42px;
+        margin-bottom: 20px;
+        color: var(--green-700);
+      }
+      .feat-card h3 {
+        font-size: 17px;
+        margin-bottom: 10px;
+        font-weight: 600;
+      }
+      .feat-card p {
+        font-size: 14px;
+        color: var(--ink-soft);
+        line-height: 1.6;
+      }
+      .feat-tag {
+        display: inline-block;
+        margin-top: 16px;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 10.5px;
+        color: var(--ink-faint);
+        letter-spacing: 0.08em;
+      }
 
-/* ================= MODULES (tabs) ================= */
-.tabs-shell{border:1px solid var(--line); background:#fff;}
-.tabbtns{display:flex; border-bottom:1px solid var(--line);}
-.tabbtn{
-  flex:1; padding:20px 24px; text-align:left; background:none; border:none; cursor:pointer; font-family:'Inter',sans-serif;
-  border-right:1px solid var(--line); transition:background .25s ease;
-}
-.tabbtn:last-child{border-right:none;}
-.tabbtn .t-label{display:block; font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ink-faint); letter-spacing:.1em; text-transform:uppercase; margin-bottom:6px;}
-.tabbtn .t-name{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:17px; color:var(--ink-soft); transition:color .25s ease;}
-.tabbtn.active{background:var(--green-050);}
-.tabbtn.active .t-name{color:var(--green-700);}
-.tabbtn.active .t-label{color:var(--green-600);}
-.tabpanel{display:none; padding:40px; grid-template-columns:1fr 1fr; gap:40px;}
-.tabpanel.active{display:grid;}
-.tabpanel h4{font-size:13px; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-faint); font-family:'IBM Plex Mono',monospace; margin-bottom:16px;}
-.tabpanel ul{list-style:none; display:flex; flex-direction:column; gap:11px;}
-.tabpanel li{font-size:14.5px; color:var(--ink-soft); display:flex; align-items:flex-start; gap:10px; line-height:1.5;}
-.tabpanel li::before{content:""; width:5px; height:5px; margin-top:8px; background:var(--green-500); flex-shrink:0;}
+      /* ================= MODULES (tabs) ================= */
+      .tabs-shell {
+        border: 1px solid var(--line);
+        background: #fff;
+      }
+      .tabbtns {
+        display: flex;
+        border-bottom: 1px solid var(--line);
+      }
+      .tabbtn {
+        flex: 1;
+        padding: 20px 24px;
+        text-align: left;
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-family: "Inter", sans-serif;
+        border-right: 1px solid var(--line);
+        transition: background 0.25s ease;
+      }
+      .tabbtn:last-child {
+        border-right: none;
+      }
+      .tabbtn .t-label {
+        display: block;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 11px;
+        color: var(--ink-faint);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+      }
+      .tabbtn .t-name {
+        font-family: "Space Grotesk", sans-serif;
+        font-weight: 600;
+        font-size: 17px;
+        color: var(--ink-soft);
+        transition: color 0.25s ease;
+      }
+      .tabbtn.active {
+        background: var(--green-050);
+      }
+      .tabbtn.active .t-name {
+        color: var(--green-700);
+      }
+      .tabbtn.active .t-label {
+        color: var(--green-600);
+      }
+      .tabpanel {
+        display: none;
+        padding: 40px;
+        grid-template-columns: 1fr 1fr;
+        gap: 40px;
+      }
+      .tabpanel.active {
+        display: grid;
+      }
+      .tabpanel h4 {
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--ink-faint);
+        font-family: "IBM Plex Mono", monospace;
+        margin-bottom: 16px;
+      }
+      .tabpanel ul {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 11px;
+      }
+      .tabpanel li {
+        font-size: 14.5px;
+        color: var(--ink-soft);
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        line-height: 1.5;
+      }
+      .tabpanel li::before {
+        content: "";
+        width: 5px;
+        height: 5px;
+        margin-top: 8px;
+        background: var(--green-500);
+        flex-shrink: 0;
+      }
 
-/* ================= CTA BAND ================= */
-.cta-band{
-  position:relative; overflow:hidden;
-  background:var(--green-900); color:#fff; padding:90px 0; text-align:center;
-}
-.cta-band::before{
-  content:""; position:absolute; inset:0; opacity:.14; pointer-events:none;
-  background-image:linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg,#fff 1px, transparent 1px);
-  background-size:52px 52px;
-}
-.cta-band h2{color:#fff; font-size:clamp(28px,3.6vw,42px); margin-bottom:16px; position:relative;}
-.cta-band p{color:rgba(255,255,255,0.72); max-width:520px; margin:0 auto 34px; font-size:16px; line-height:1.6; position:relative;}
-.cta-actions{display:flex; gap:14px; justify-content:center; position:relative; flex-wrap:wrap;}
-.cta-band .btn-solid{background:var(--green-500);}
-.cta-band .btn-solid:hover{background:#fff; color:var(--green-900);}
-.cta-band .btn-ghost{border-color:rgba(255,255,255,0.3); color:#fff;}
-.cta-band .btn-ghost:hover{border-color:#fff; background:rgba(255,255,255,0.08); color:#fff;}
+      /* ================= CTA BAND ================= */
+      .cta-band {
+        position: relative;
+        overflow: hidden;
+        background: var(--green-900);
+        color: #fff;
+        padding: 90px 0;
+        text-align: center;
+      }
+      .cta-band::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        opacity: 0.14;
+        pointer-events: none;
+        background-image:
+          linear-gradient(#fff 1px, transparent 1px),
+          linear-gradient(90deg, #fff 1px, transparent 1px);
+        background-size: 52px 52px;
+      }
+      .cta-band h2 {
+        color: #fff;
+        font-size: clamp(28px, 3.6vw, 42px);
+        margin-bottom: 16px;
+        position: relative;
+      }
+      .cta-band p {
+        color: rgba(255, 255, 255, 0.72);
+        max-width: 520px;
+        margin: 0 auto 34px;
+        font-size: 16px;
+        line-height: 1.6;
+        position: relative;
+      }
+      .cta-actions {
+        display: flex;
+        gap: 14px;
+        justify-content: center;
+        position: relative;
+        flex-wrap: wrap;
+      }
+      .cta-band .btn-solid {
+        background: var(--green-500);
+      }
+      .cta-band .btn-solid:hover {
+        background: #fff;
+        color: var(--green-900);
+      }
+      .cta-band .btn-ghost {
+        border-color: rgba(255, 255, 255, 0.3);
+        color: #fff;
+      }
+      .cta-band .btn-ghost:hover {
+        border-color: #fff;
+        background: rgba(255, 255, 255, 0.08);
+        color: #fff;
+      }
 
-/* ================= FOOTER ================= */
-footer{background:#fff; border-top:1px solid var(--line); padding:64px 0 28px;}
-.foot-grid{display:grid; grid-template-columns:1.4fr repeat(3,1fr); gap:40px; padding-bottom:44px; border-bottom:1px solid var(--line); margin-bottom:26px;}
-.foot-brand p{color:var(--ink-soft); font-size:14px; line-height:1.6; margin-top:14px; max-width:280px;}
-.foot-col h5{font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:16px;}
-.foot-col a{display:block; font-size:14px; color:var(--ink-soft); margin-bottom:11px; transition:color .2s ease;}
-.foot-col a:hover{color:var(--green-700);}
-.foot-bottom{display:flex; justify-content:space-between; align-items:center; font-size:12.5px; color:var(--ink-faint); flex-wrap:wrap; gap:10px;}
-.foot-bottom .mono{letter-spacing:.04em;}
+      /* ================= FOOTER ================= */
+      footer {
+        background: #fff;
+        border-top: 1px solid var(--line);
+        padding: 64px 0 28px;
+      }
+      .foot-grid {
+        display: grid;
+        grid-template-columns: 1.4fr repeat(3, 1fr);
+        gap: 40px;
+        padding-bottom: 44px;
+        border-bottom: 1px solid var(--line);
+        margin-bottom: 26px;
+      }
+      .foot-brand p {
+        color: var(--ink-soft);
+        font-size: 14px;
+        line-height: 1.6;
+        margin-top: 14px;
+        max-width: 280px;
+      }
+      .foot-col h5 {
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 11px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--ink-faint);
+        margin-bottom: 16px;
+      }
+      .foot-col a {
+        display: block;
+        font-size: 14px;
+        color: var(--ink-soft);
+        margin-bottom: 11px;
+        transition: color 0.2s ease;
+      }
+      .foot-col a:hover {
+        color: var(--green-700);
+      }
+      .foot-bottom {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 12.5px;
+        color: var(--ink-faint);
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .foot-bottom .mono {
+        letter-spacing: 0.04em;
+      }
 
-/* ================= MODAL AUTH ================= */
-.modal-overlay{
-  position:fixed; inset:0; background:rgba(13,30,23,0.55); backdrop-filter:blur(3px);
-  display:flex; align-items:center; justify-content:center; z-index:2000; padding:20px;
-  opacity:0; visibility:hidden; transition:opacity .3s ease, visibility .3s ease;
-}
-.modal-overlay.open{opacity:1; visibility:visible;}
-.modal-box{
-  background:#fff; width:100%; max-width:420px; border:1px solid var(--line-strong); box-shadow:0 30px 60px -20px rgba(13,59,44,0.4);
-  transform:translateY(24px) scale(.97); opacity:0; transition:transform .38s cubic-bezier(.34,1.56,.64,1), opacity .3s ease;
-  position:relative; max-height:90vh; overflow-y:auto; overflow-x:hidden;
-}
-.modal-overlay.open .modal-box{transform:translateY(0) scale(1); opacity:1;}
-.modal-head{padding:26px 28px 0;}
-.modal-close{
-  position:absolute; top:18px; right:18px; width:30px; height:30px; border:1px solid var(--line-strong); background:#fff;
-  cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .2s ease; z-index:2;
-}
-.modal-close:hover{border-color:var(--green-600); color:var(--green-700); transform:rotate(90deg);}
-.modal-tabs{display:flex; gap:0; border-bottom:1px solid var(--line); margin:20px 28px 0;}
-.mtab{flex:1; padding:12px 0; text-align:center; font-size:14px; font-weight:600; color:var(--ink-faint); cursor:pointer; border-bottom:2px solid transparent; transition:all .25s ease;}
-.mtab.active{color:var(--green-700); border-color:var(--green-600);}
-.modal-body{padding:26px 28px 30px;}
-.auth-eyebrow{font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--green-600); letter-spacing:.1em; text-transform:uppercase; margin-bottom:8px;}
-.modal-body h3{font-size:22px; margin-bottom:6px;}
-.modal-body>p.sub{color:var(--ink-soft); font-size:13.5px; margin-bottom:22px;}
-.form-panel{display:none; flex-direction:column; gap:16px;}
-.form-panel.active{display:flex;}
-.field{display:flex; flex-direction:column; gap:6px;}
-.field label{font-size:12.5px; font-weight:600; color:var(--ink);}
-.field input,.field select{
-  border:1px solid var(--line-strong); padding:12px 13px; font-family:'Inter',sans-serif; font-size:14px; background:var(--bg-soft);
-  transition:border-color .2s ease, background .2s ease; outline:none;
-}
-.field input:focus,.field select:focus{border-color:var(--green-600); background:#fff;}
-.field-row{display:grid; grid-template-columns:1fr 1fr; gap:12px; min-width:0;}
-.field{min-width:0;}
-.field input,.field select{width:100%; min-width:0;}
-.form-foot{display:flex; justify-content:space-between; align-items:center; font-size:12.5px; margin-top:-4px;}
-.form-foot a{color:var(--green-700); font-weight:600;}
-.form-msg{font-size:12.5px; padding:10px 12px; background:var(--green-050); border:1px dashed var(--line-strong); color:var(--green-800,var(--green-700)); display:none; align-items:center; gap:8px;}
-.form-msg.show{display:flex;}
-.switch-line{text-align:center; font-size:13px; color:var(--ink-soft); margin-top:18px;}
-.switch-line b{color:var(--green-700); cursor:pointer;}
-.checkline{display:flex; align-items:flex-start; gap:8px; font-size:12.5px; color:var(--ink-soft);}
+      /* ================= MODAL AUTH ================= */
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(13, 30, 23, 0.55);
+        backdrop-filter: blur(3px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+        padding: 20px;
+        opacity: 0;
+        visibility: hidden;
+        transition:
+          opacity 0.3s ease,
+          visibility 0.3s ease;
+      }
+      .modal-overlay.open {
+        opacity: 1;
+        visibility: visible;
+      }
+      .modal-box {
+        background: #fff;
+        width: 100%;
+        max-width: 420px;
+        border: 1px solid var(--line-strong);
+        box-shadow: 0 30px 60px -20px rgba(13, 59, 44, 0.4);
+        transform: translateY(24px) scale(0.97);
+        opacity: 0;
+        transition:
+          transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1),
+          opacity 0.3s ease;
+        position: relative;
+        max-height: 90vh;
+        overflow-y: auto;
+        overflow-x: hidden;
+      }
+      .modal-overlay.open .modal-box {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+      }
+      .modal-head {
+        padding: 26px 28px 0;
+      }
+      .modal-close {
+        position: absolute;
+        top: 18px;
+        right: 18px;
+        width: 30px;
+        height: 30px;
+        border: 1px solid var(--line-strong);
+        background: #fff;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        z-index: 2;
+      }
+      .modal-close:hover {
+        border-color: var(--green-600);
+        color: var(--green-700);
+        transform: rotate(90deg);
+      }
+      .modal-tabs {
+        display: flex;
+        gap: 0;
+        border-bottom: 1px solid var(--line);
+        margin: 20px 28px 0;
+      }
+      .mtab {
+        flex: 1;
+        padding: 12px 0;
+        text-align: center;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--ink-faint);
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        transition: all 0.25s ease;
+      }
+      .mtab.active {
+        color: var(--green-700);
+        border-color: var(--green-600);
+      }
+      .modal-body {
+        padding: 26px 28px 30px;
+      }
+      .auth-eyebrow {
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 11px;
+        color: var(--green-600);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+      }
+      .modal-body h3 {
+        font-size: 22px;
+        margin-bottom: 6px;
+      }
+      .modal-body > p.sub {
+        color: var(--ink-soft);
+        font-size: 13.5px;
+        margin-bottom: 22px;
+      }
+      .form-panel {
+        display: none;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .form-panel.active {
+        display: flex;
+      }
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .field label {
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--ink);
+      }
+      .field input,
+      .field select {
+        border: 1px solid var(--line-strong);
+        padding: 12px 13px;
+        font-family: "Inter", sans-serif;
+        font-size: 14px;
+        background: var(--bg-soft);
+        transition:
+          border-color 0.2s ease,
+          background 0.2s ease;
+        outline: none;
+      }
+      .field input:focus,
+      .field select:focus {
+        border-color: var(--green-600);
+        background: #fff;
+      }
+      .field-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        min-width: 0;
+      }
+      .field {
+        min-width: 0;
+      }
+      .field input,
+      .field select {
+        width: 100%;
+        min-width: 0;
+      }
+      .form-foot {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 12.5px;
+        margin-top: -4px;
+      }
+      .form-foot a {
+        color: var(--green-700);
+        font-weight: 600;
+      }
+      .form-msg {
+        font-size: 12.5px;
+        padding: 10px 12px;
+        background: var(--green-050);
+        border: 1px dashed var(--line-strong);
+        color: var(--green-800, var(--green-700));
+        display: none;
+        align-items: center;
+        gap: 8px;
+      }
+      .form-msg.show {
+        display: flex;
+      }
+      .switch-line {
+        text-align: center;
+        font-size: 13px;
+        color: var(--ink-soft);
+        margin-top: 18px;
+      }
+      .switch-line b {
+        color: var(--green-700);
+        cursor: pointer;
+      }
+      .checkline {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        font-size: 12.5px;
+        color: var(--ink-soft);
+      }
 
-/* role toggle (customer / vendor / service center) */
-.role-toggle{display:flex; gap:6px; margin:30px 0 4px; flex-wrap:wrap;}
-.role-btn{
-  flex:1; min-width:105px; display:flex; align-items:center; justify-content:center; gap:6px;
-  padding:15px 10px; border:1px solid var(--line-strong); background:var(--bg-soft);
-  font-family:'Inter',sans-serif; font-size:12.5px; font-weight:600; color:var(--ink-soft);
-  cursor:pointer; transition:all .22s ease; white-space:nowrap;
-}
-.role-btn svg{width:15px; height:15px; flex-shrink:0;}
-.role-btn:hover{border-color:var(--green-600); color:var(--ink);}
-.role-btn.active{background:var(--green-700); border-color:var(--green-700); color:#fff;}
-.role-hint{font-size:12px; color:var(--ink-faint); margin-top:8px; min-height:14px;}
+      /* role toggle (customer / vendor / service center) */
+      .role-toggle {
+        display: flex;
+        gap: 6px;
+        margin: 30px 0 4px;
+        flex-wrap: wrap;
+      }
+      .role-btn {
+        flex: 1;
+        min-width: 105px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 15px 10px;
+        border: 1px solid var(--line-strong);
+        background: var(--bg-soft);
+        font-family: "Inter", sans-serif;
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--ink-soft);
+        cursor: pointer;
+        transition: all 0.22s ease;
+        white-space: nowrap;
+      }
+      .role-btn svg {
+        width: 15px;
+        height: 15px;
+        flex-shrink: 0;
+      }
+      .role-btn:hover {
+        border-color: var(--green-600);
+        color: var(--ink);
+      }
+      .role-btn.active {
+        background: var(--green-700);
+        border-color: var(--green-700);
+        color: #fff;
+      }
+      .role-hint {
+        font-size: 12px;
+        color: var(--ink-faint);
+        margin-top: 8px;
+        min-height: 14px;
+      }
 
-.vendor-fields{
-  display:flex; flex-direction:column; gap:16px;
-  padding:16px 14px; background:var(--green-050); border:1px dashed var(--line-strong);
-  animation:vfIn .35s ease;
-}
-.vendor-fields[hidden]{display:none;}
-.vendor-fields-head{margin-top:-2px;}
-.vendor-fields-head .mono{font-size:10.5px; letter-spacing:.1em; color:var(--green-700); font-family:'IBM Plex Mono',monospace;}
-@keyframes vfIn{from{opacity:0; transform:translateY(-6px);} to{opacity:1; transform:translateY(0);}}
+      .vendor-fields {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        padding: 16px 14px;
+        background: var(--green-050);
+        border: 1px dashed var(--line-strong);
+        animation: vfIn 0.35s ease;
+      }
+      .vendor-fields[hidden] {
+        display: none;
+      }
+      .vendor-fields-head {
+        margin-top: -2px;
+      }
+      .vendor-fields-head .mono {
+        font-size: 10.5px;
+        letter-spacing: 0.1em;
+        color: var(--green-700);
+        font-family: "IBM Plex Mono", monospace;
+      }
+      @keyframes vfIn {
+        from {
+          opacity: 0;
+          transform: translateY(-6px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
 
-/* ================= RESPONSIVE ================= */
-@media (max-width:960px){
-  .navlinks{display:none;}
-  .navcta{display:none;}
-  .hamburger{display:flex;}
-  .hero-grid{grid-template-columns:1fr; gap:52px;}
-  .hero-visual{order:-1;}
-  .float-card{display:none;}
-  .stats-grid{grid-template-columns:repeat(2,1fr);}
-  .stat-cell:nth-child(2){border-right:none;}
-  .stat-cell{border-bottom:1px solid var(--line);}
-  .steps{grid-template-columns:1fr;}
-  .step{border-right:none; border-bottom:1px dashed var(--line-strong); padding:26px 0;}
-  .feat-grid{grid-template-columns:1fr;}
-  .tabbtns{flex-direction:column;}
-  .tabbtn{border-right:none; border-bottom:1px solid var(--line);}
-  .tabpanel{grid-template-columns:1fr; padding:28px;}
-  .foot-grid{grid-template-columns:1fr 1fr; gap:32px;}
-}
-@media (max-width:560px){
-  .wrap{padding:0 20px;}
-  .foot-grid{grid-template-columns:1fr;}
-  .field-row{grid-template-columns:1fr;}
-}
-@media (prefers-reduced-motion:reduce){
-  *{animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important;}
-}
-</style>
-</head>
-<body>
-
-<!-- ================= NAVBAR ================= -->
-<header id="siteHeader">
-  <div class="wrap navrow">
-    <a href="#top" class="brand">
-      <svg class="brand-mark" viewBox="0 0 40 40" fill="none">
-        <rect x="1" y="1" width="38" height="38" stroke="#178a4c" stroke-width="1.4" stroke-dasharray="3 3"/>
-        <path d="M9 24l2-7c.4-1.2 1.5-2 2.8-2h12.4c1.3 0 2.4.8 2.8 2l2 7" stroke="#0d3b2c" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M9 24h22v3.5a1.5 1.5 0 01-1.5 1.5h-1a1.5 1.5 0 01-1.5-1.5V26h-15v1.5A1.5 1.5 0 0110.5 29h-1A1.5 1.5 0 018 27.5V24z" stroke="#0d3b2c" stroke-width="1.8" stroke-linejoin="round"/>
-        <circle cx="14" cy="24" r="1.6" fill="#178a4c"/>
-        <circle cx="26" cy="24" r="1.6" fill="#178a4c"/>
-      </svg>
-      <span>PartMatch<small>Vehicle Compatibility Engine</small></span>
-    </a>
-
-    <ul class="navlinks">
-      <li><a href="#marketplace">Marketplace</a></li>
-      <li><a href="#maintenance">Maintenance AI</a></li>
-      <li><a href="#modules">How It Works</a></li>
-      <li><a href="#service">Service Booking</a></li>
-      <li><a href="#about">About</a></li>
-    </ul>
-
-    <div class="navcta">
-      <button class="btn btn-ghost" data-open-auth="login">Log in</button>
-      <button class="btn btn-solid" data-open-auth="register">Register vehicle</button>
-    </div>
-
-    <button class="hamburger" id="hamburgerBtn" aria-label="Toggle menu">
-      <span></span><span></span><span></span>
-    </button>
-  </div>
-
-  <nav class="mobilenav" id="mobileNav">
-    <a href="#marketplace">Marketplace</a>
-    <a href="#maintenance">Maintenance AI</a>
-    <a href="#modules">How It Works</a>
-    <a href="#service">Service Booking</a>
-    <a href="#about">About</a>
-    <div class="navcta">
-    {% if session.get('user_id') %}
-        <a href="{{ url_for(session['role'] + '_dashboard') }}" class="btn btn-ghost">Dashboard</a>
-        <a href="{{ url_for('logout') }}" class="btn btn-solid">Log out</a>
-    {% else %}
-        <button class="btn btn-ghost" data-open-auth="login">Log in</button>
-        <button class="btn btn-solid" data-open-auth="register">Register vehicle</button>
-    {% endif %}
-</div>
-  </nav>
-</header>
-
-<!-- ================= HERO ================= -->
-<section class="hero" id="top">
-  <div class="wrap hero-grid">
-    <div class="hero-copy reveal in">
-      <span class="eyebrow">Vehicle Compatibility Engine — Live Scan</span>
-      <h1>Find the right part.<br><em>Every single time.</em></h1>
-      <p class="lead">Register your vehicle once and PartMatch filters every listing across verified vendors down to what actually fits — then tells you when it's time to replace it, before it fails.</p>
-      <div class="hero-actions">
-        <button class="btn btn-solid btn-lg" data-open-auth="register">Register your vehicle</button>
-        <a href="#marketplace" class="btn btn-ghost btn-lg">Browse spare parts</a>
-      </div>
-      <div class="hero-meta">
-        <div><strong>98.4%</strong><span>Match accuracy</span></div>
-        <div><strong>1,200+</strong><span>Verified vendors</span></div>
-        <div><strong>340+</strong><span>Service stations</span></div>
-      </div>
-    </div>
-
-    <div class="hero-visual reveal in">
-      <div class="scanwrap">
-        <div class="scan-topbar">
-          <span><span class="dot"></span>SCAN ACTIVE — VIN::7HGCM8...4X219</span>
-          <span>MODEL: Sedan / Petrol / 2021</span>
-        </div>
-        <div class="scan-canvas">
-          <svg viewBox="0 0 600 340" xmlns="http://www.w3.org/2000/svg">
-            <!-- blueprint grid -->
-            <rect x="0" y="0" width="600" height="340" fill="#ffffff"/>
-            <g stroke="#e3edde" stroke-width="1">
-              <line x1="0" y1="60" x2="600" y2="60"/>
-              <line x1="0" y1="120" x2="600" y2="120"/>
-              <line x1="0" y1="180" x2="600" y2="180"/>
-              <line x1="0" y1="240" x2="600" y2="240"/>
-              <line x1="0" y1="300" x2="600" y2="300"/>
-              <line x1="100" y1="0" x2="100" y2="340"/>
-              <line x1="200" y1="0" x2="200" y2="340"/>
-              <line x1="300" y1="0" x2="300" y2="340"/>
-              <line x1="400" y1="0" x2="400" y2="340"/>
-              <line x1="500" y1="0" x2="500" y2="340"/>
-            </g>
-
-            <!-- car silhouette -->
-            <g fill="none" stroke="#0d3b2c" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
-              <path d="M65 215 L65 190 Q65 168 88 165 L128 160 Q158 108 208 100 L372 100 Q422 108 452 160 L492 165 Q515 168 515 190 L515 215" />
-              <path d="M65 215 L515 215" stroke-dasharray="4 4" stroke-width="1.4"/>
-              <path d="M148 160 L172 108" stroke-width="1.4"/>
-              <path d="M290 100 L290 160" stroke-width="1.4"/>
-              <path d="M408 108 L432 160" stroke-width="1.4"/>
-            </g>
-            <g>
-              <circle cx="155" cy="216" r="34" fill="#ffffff" stroke="#0d3b2c" stroke-width="2"/>
-              <circle cx="155" cy="216" r="12" fill="#eefbf1" stroke="#178a4c" stroke-width="1.6"/>
-              <circle cx="425" cy="216" r="34" fill="#ffffff" stroke="#0d3b2c" stroke-width="2"/>
-              <circle cx="425" cy="216" r="12" fill="#eefbf1" stroke="#178a4c" stroke-width="1.6"/>
-            </g>
-
-            <!-- diagnostic nodes -->
-            <g class="node">
-              <circle cx="230" cy="130" r="4" fill="#178a4c"/>
-              <circle class="pulse" cx="230" cy="130" r="4" fill="none" stroke="#1fa85a" stroke-width="2"/>
-              <line x1="230" y1="130" x2="230" y2="40" stroke="#b8d4c0" stroke-width="1" stroke-dasharray="3 3"/>
-              <text x="196" y="30" font-family="IBM Plex Mono, monospace" font-size="10" fill="#4c5f56">ENGINE · OIL DUE</text>
-            </g>
-            <g class="node">
-              <circle cx="155" cy="216" r="4" fill="#178a4c"/>
-              <circle class="pulse" cx="155" cy="216" r="4" fill="none" stroke="#1fa85a" stroke-width="2"/>
-              <line x1="155" y1="252" x2="155" y2="300" stroke="#b8d4c0" stroke-width="1" stroke-dasharray="3 3"/>
-              <text x="104" y="316" font-family="IBM Plex Mono, monospace" font-size="10" fill="#4c5f56">BRAKE PAD · 92%</text>
-            </g>
-            <g class="node">
-              <circle cx="400" cy="150" r="4" fill="#178a4c"/>
-              <circle class="pulse" cx="400" cy="150" r="4" fill="none" stroke="#1fa85a" stroke-width="2"/>
-              <line x1="400" y1="150" x2="470" y2="90" stroke="#b8d4c0" stroke-width="1" stroke-dasharray="3 3"/>
-              <text x="440" y="80" font-family="IBM Plex Mono, monospace" font-size="10" fill="#4c5f56">BATTERY · OK</text>
-            </g>
-          </svg>
-          <div class="scanline"></div>
-        </div>
-        <div class="scan-footer">
-          <span class="match-pill">3 components flagged &nbsp;→&nbsp; <b>view matched parts</b></span>
-        </div>
-      </div>
-
-      <div class="float-card fc1">
-        <svg class="check-ic" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" stroke="#178a4c" stroke-width="1.4"/><path d="M6 10l2.5 2.5L14 7" stroke="#178a4c" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        <span><b>Compatible</b> — Bosch Brake Pad Set</span>
-      </div>
-      <div class="float-card fc2">
-        <svg class="check-ic" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" stroke="#178a4c" stroke-width="1.4"/><path d="M6 10l2.5 2.5L14 7" stroke="#178a4c" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        <span><b>4 vendors</b> — from ₹1,240</span>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ================= STATS ================= -->
-<section class="stats">
-  <div class="wrap">
-    <div class="stats-grid reveal">
-      <div class="stat-cell"><strong>52,000+</strong><span>Spare parts catalogued</span></div>
-      <div class="stat-cell"><strong>1,200+</strong><span>Verified vendors onboarded</span></div>
-      <div class="stat-cell"><strong>340+</strong><span>Partner service stations</span></div>
-      <div class="stat-cell"><strong>98.4%</strong><span>Compatibility match accuracy</span></div>
-    </div>
-  </div>
-</section>
-
-<!-- ================= HOW IT WORKS ================= -->
-<section class="section" id="modules">
-  <div class="wrap">
-    <div class="sec-head reveal">
-      <span class="eyebrow">Process</span>
-      <h2>From registration to a wrench turning — three steps.</h2>
-      <p>No manual searching, no guessing whether a part fits. Your vehicle profile does the filtering for you.</p>
-    </div>
-    <div class="steps">
-      <div class="step reveal">
-        <div class="step-line"></div>
-        <span class="num">01 / REGISTER</span>
-        <h3>Add your vehicle</h3>
-        <p>Enter make, model, variant, fuel type and year once. PartMatch builds a compatibility profile behind the scenes.</p>
-      </div>
-      <div class="step reveal">
-        <div class="step-line"></div>
-        <span class="num">02 / MATCH</span>
-        <h3>Get matched parts</h3>
-        <p>Browse only the parts that fit, compared across verified vendors on price, rating and availability.</p>
-      </div>
-      <div class="step reveal">
-        <div class="step-line"></div>
-        <span class="num">03 / INSTALL</span>
-        <h3>Book installation</h3>
-        <p>Compare nearby service stations and book a slot. Your digital maintenance record updates automatically.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ================= FEATURES ================= -->
-<section class="section alt" id="maintenance">
-  <div class="wrap">
-    <div class="sec-head reveal">
-      <span class="eyebrow">Platform capabilities</span>
-      <h2>Built to remove guesswork from vehicle ownership.</h2>
-      <p>Every feature below is designed around one job: making sure the part you buy and the service you book actually fit your vehicle.</p>
-    </div>
-    <div class="feat-grid reveal">
-      <div class="feat-card reticle">
-        <span class="rc-bl"></span><span class="rc-br"></span>
-        <svg class="feat-ic" viewBox="0 0 42 42" fill="none"><rect x="6" y="6" width="30" height="30" stroke="currentColor" stroke-width="1.6" stroke-dasharray="4 3"/><path d="M14 21l5 5 9-11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        <h3>Vehicle Compatibility Engine</h3>
-        <p>Automatically filters the entire catalogue down to parts that match your vehicle's manufacturer, model, variant and year.</p>
-        <span class="feat-tag">MODULE · CUSTOMER</span>
-      </div>
-      <div class="feat-card reticle">
-        <span class="rc-bl"></span><span class="rc-br"></span>
-        <svg class="feat-ic" viewBox="0 0 42 42" fill="none"><path d="M21 6v8M21 28v8M6 21h8M28 21h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="21" cy="21" r="9" stroke="currentColor" stroke-width="1.8"/></svg>
-        <h3>Predictive Maintenance</h3>
-        <p>Uses mileage, service history and manufacturer schedules to flag when oil, brakes, batteries or filters are due.</p>
-        <span class="feat-tag">MODULE · AI ASSISTANT</span>
-      </div>
-      <div class="feat-card reticle">
-        <span class="rc-bl"></span><span class="rc-br"></span>
-        <svg class="feat-ic" viewBox="0 0 42 42" fill="none"><path d="M8 26c0-9 5-16 13-16s13 7 13 16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M8 26h26v4a2 2 0 01-2 2H10a2 2 0 01-2-2v-4z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-        <h3>AI Diagnostic Assistant</h3>
-        <p>Describe a symptom in plain language — get likely causes, recommended parts and an estimated repair cost.</p>
-        <span class="feat-tag">MODULE · AI ASSISTANT</span>
-      </div>
-      <div class="feat-card reticle">
-        <span class="rc-bl"></span><span class="rc-br"></span>
-        <svg class="feat-ic" viewBox="0 0 42 42" fill="none"><rect x="6" y="12" width="30" height="20" stroke="currentColor" stroke-width="1.8"/><path d="M6 18h30M14 12V8h14v4" stroke="currentColor" stroke-width="1.8"/></svg>
-        <h3>Multi-Vendor Marketplace</h3>
-        <p>Compare specifications, ratings and stock availability from verified vendors before you check out.</p>
-        <span class="feat-tag">MODULE · VENDOR</span>
-      </div>
-      <div class="feat-card reticle">
-        <span class="rc-bl"></span><span class="rc-br"></span>
-        <svg class="feat-ic" viewBox="0 0 42 42" fill="none"><rect x="7" y="9" width="28" height="26" rx="1" stroke="currentColor" stroke-width="1.8"/><path d="M7 17h28M14 5v8M28 5v8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-        <h3>Service Station Booking</h3>
-        <p>Compare nearby workshops by rating, distance and charges, then confirm an installation slot in a few taps.</p>
-        <span class="feat-tag">MODULE · CUSTOMER</span>
-      </div>
-      <div class="feat-card reticle">
-        <span class="rc-bl"></span><span class="rc-br"></span>
-        <svg class="feat-ic" viewBox="0 0 42 42" fill="none"><path d="M9 33V17M21 33V9M33 33v-9" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
-        <h3>Digital Maintenance Records</h3>
-        <p>Every completed service updates your vehicle's history automatically — searchable, exportable, always current.</p>
-        <span class="feat-tag">MODULE · CUSTOMER</span>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ================= ROLE MODULES / TABS ================= -->
-<section class="section" id="marketplace">
-  <div class="wrap">
-    <div class="sec-head reveal">
-      <span class="eyebrow">Three dashboards, one platform</span>
-      <h2>Built for owners, vendors and administrators alike.</h2>
-      <p>Each role gets exactly the tools it needs — nothing bolted on, nothing missing.</p>
-    </div>
-
-    <div class="tabs-shell reveal">
-      <div class="tabbtns">
-        <button class="tabbtn active" data-tab="customer">
-          <span class="t-label">Role 01</span><span class="t-name">Customer</span>
-        </button>
-        <button class="tabbtn" data-tab="vendor">
-          <span class="t-label">Role 02</span><span class="t-name">Vendor</span>
-        </button>
-        <button class="tabbtn" data-tab="admin">
-          <span class="t-label">Role 03</span><span class="t-name">Admin</span>
-        </button>
-      </div>
-
-      <div class="tabpanel active" id="panel-customer">
-        <div>
-          <h4>Functions</h4>
-          <ul>
-            <li>Register vehicle &amp; view compatible parts</li>
-            <li>Compare products across vendors</li>
-            <li>Place orders &amp; track delivery</li>
-            <li>Receive maintenance reminders</li>
-            <li>Book service station appointments</li>
-          </ul>
-        </div>
-        <div>
-          <h4>Benefits</h4>
-          <ul>
-            <li>Simplified spare parts purchasing</li>
-            <li>Reduced compatibility issues</li>
-            <li>Personalized maintenance assistance</li>
-            <li>Full digital service history in one place</li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="tabpanel" id="panel-vendor">
-        <div>
-          <h4>Functions</h4>
-          <ul>
-            <li>List spare parts with specifications</li>
-            <li>Manage stock &amp; pricing in real time</li>
-            <li>Process and fulfil customer orders</li>
-            <li>Track sales performance</li>
-          </ul>
-        </div>
-        <div>
-          <h4>Benefits</h4>
-          <ul>
-            <li>Efficient inventory management</li>
-            <li>Increased market reach</li>
-            <li>Better sales tracking &amp; reporting</li>
-            <li>Direct customer feedback loop</li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="tabpanel" id="panel-admin">
-        <div>
-          <h4>Functions</h4>
-          <ul>
-            <li>Verify vendor accounts &amp; product listings</li>
-            <li>Monitor transactions &amp; flag anomalies</li>
-            <li>Manage categories, brands &amp; disputes</li>
-            <li>Generate marketplace-wide reports</li>
-          </ul>
-        </div>
-        <div>
-          <h4>Benefits</h4>
-          <ul>
-            <li>Centralized system administration</li>
-            <li>Improved platform-wide security</li>
-            <li>Stronger vendor accountability</li>
-            <li>Comprehensive business insight</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ================= CTA ================= -->
-<section class="cta-band" id="service">
-  <div class="wrap">
-    <div class="reveal">
-      <h2>Stop guessing which part fits.</h2>
-      <p>Register your vehicle in under two minutes and see your first set of matched parts instantly.</p>
-      <div class="cta-actions">
-        <button class="btn btn-solid btn-lg" data-open-auth="register">Create free account</button>
-        <button class="btn btn-ghost btn-lg" data-open-auth="login">I already have an account</button>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ================= FOOTER ================= -->
-<footer id="about">
-  <div class="wrap">
-    <div class="foot-grid">
-      <div class="foot-brand">
+      /* ================= RESPONSIVE ================= */
+      @media (max-width: 960px) {
+        .navlinks {
+          display: none;
+        }
+        .navcta {
+          display: none;
+        }
+        .hamburger {
+          display: flex;
+        }
+        .hero-grid {
+          grid-template-columns: 1fr;
+          gap: 52px;
+        }
+        .hero-visual {
+          order: -1;
+        }
+        .float-card {
+          display: none;
+        }
+        .stats-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .stat-cell:nth-child(2) {
+          border-right: none;
+        }
+        .stat-cell {
+          border-bottom: 1px solid var(--line);
+        }
+        .steps {
+          grid-template-columns: 1fr;
+        }
+        .step {
+          border-right: none;
+          border-bottom: 1px dashed var(--line-strong);
+          padding: 26px 0;
+        }
+        .feat-grid {
+          grid-template-columns: 1fr;
+        }
+        .tabbtns {
+          flex-direction: column;
+        }
+        .tabbtn {
+          border-right: none;
+          border-bottom: 1px solid var(--line);
+        }
+        .tabpanel {
+          grid-template-columns: 1fr;
+          padding: 28px;
+        }
+        .foot-grid {
+          grid-template-columns: 1fr 1fr;
+          gap: 32px;
+        }
+      }
+      @media (max-width: 560px) {
+        .wrap {
+          padding: 0 20px;
+        }
+        .foot-grid {
+          grid-template-columns: 1fr;
+        }
+        .field-row {
+          grid-template-columns: 1fr;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          animation-duration: 0.001ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.001ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ================= NAVBAR ================= -->
+    <header id="siteHeader">
+      <div class="wrap navrow">
         <a href="#top" class="brand">
           <svg class="brand-mark" viewBox="0 0 40 40" fill="none">
-            <rect x="1" y="1" width="38" height="38" stroke="#178a4c" stroke-width="1.4" stroke-dasharray="3 3"/>
-            <path d="M9 24l2-7c.4-1.2 1.5-2 2.8-2h12.4c1.3 0 2.4.8 2.8 2l2 7" stroke="#0d3b2c" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M9 24h22v3.5a1.5 1.5 0 01-1.5 1.5h-1a1.5 1.5 0 01-1.5-1.5V26h-15v1.5A1.5 1.5 0 0110.5 29h-1A1.5 1.5 0 018 27.5V24z" stroke="#0d3b2c" stroke-width="1.8" stroke-linejoin="round"/>
-            <circle cx="14" cy="24" r="1.6" fill="#178a4c"/>
-            <circle cx="26" cy="24" r="1.6" fill="#178a4c"/>
+            <rect
+              x="1"
+              y="1"
+              width="38"
+              height="38"
+              stroke="#178a4c"
+              stroke-width="1.4"
+              stroke-dasharray="3 3"
+            />
+            <path
+              d="M9 24l2-7c.4-1.2 1.5-2 2.8-2h12.4c1.3 0 2.4.8 2.8 2l2 7"
+              stroke="#0d3b2c"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M9 24h22v3.5a1.5 1.5 0 01-1.5 1.5h-1a1.5 1.5 0 01-1.5-1.5V26h-15v1.5A1.5 1.5 0 0110.5 29h-1A1.5 1.5 0 018 27.5V24z"
+              stroke="#0d3b2c"
+              stroke-width="1.8"
+              stroke-linejoin="round"
+            />
+            <circle cx="14" cy="24" r="1.6" fill="#178a4c" />
+            <circle cx="26" cy="24" r="1.6" fill="#178a4c" />
           </svg>
-          <span>PartMatch</span>
+          <span>PartMatch<small>Vehicle Compatibility Engine</small></span>
         </a>
-        <p>The AI-powered spare parts marketplace and maintenance recommendation platform — one system for buying, servicing and tracking your vehicle.</p>
+
+        <ul class="navlinks">
+          <li><a href="#marketplace">Marketplace</a></li>
+          <li><a href="#maintenance">Maintenance AI</a></li>
+          <li><a href="#modules">How It Works</a></li>
+          <li><a href="#service">Service Booking</a></li>
+          <li><a href="#about">About</a></li>
+        </ul>
+
+        <div class="navcta">
+          <button class="btn btn-ghost" data-open-auth="login">Log in</button>
+          <button class="btn btn-solid" data-open-auth="register">
+            Register vehicle
+          </button>
+        </div>
+
+        <button class="hamburger" id="hamburgerBtn" aria-label="Toggle menu">
+          <span></span><span></span><span></span>
+        </button>
       </div>
-      <div class="foot-col">
-        <h5>Platform</h5>
+
+      <nav class="mobilenav" id="mobileNav">
         <a href="#marketplace">Marketplace</a>
         <a href="#maintenance">Maintenance AI</a>
-        <a href="#service">Service Booking</a>
         <a href="#modules">How It Works</a>
-      </div>
-      <div class="foot-col">
-        <h5>Roles</h5>
-        <a href="#marketplace">For Customers</a>
-        <a href="#marketplace">For Vendors</a>
-        <a href="#marketplace">For Admins</a>
-      </div>
-      <div class="foot-col">
-        <h5>Account</h5>
-        <a data-open-auth="login">Log in</a>
-        <a data-open-auth="register" data-role="customer">Register as customer</a>
-        <a data-open-auth="register" data-role="vendor">Register as vendor</a>
-        <a data-open-auth="register" data-role="service_center">Register as service center</a>
-      </div>
-    </div>
-    <div class="foot-bottom">
-      <span>© 2026 PartMatch. Smart Vehicle Spare Parts Marketplace &amp; Maintenance Recommendation System.</span>
-      <span class="mono">MCA MINI PROJECT · BUILD 1.0</span>
-    </div>
-  </div>
-</footer>
-
-<!-- ================= AUTH MODAL ================= -->
-<div class="modal-overlay" id="authOverlay">
-  <div class="modal-box">
-    <button class="modal-close" id="modalCloseBtn">✕</button>
-    <div class="modal-tabs">
-      <div class="mtab active" data-mtab="login">Log in</div>
-      <div class="mtab" data-mtab="register">Register</div>
-    </div>
-    <div class="modal-body">
-<div class="form-panel active" id="form-login">
-      <!-- LOGIN -->
-<form id="loginForm" method="post" action="{{ url_for('login') }}" style="display:flex; flex-direction:column; gap:16px;">
-    <div class="field">
-        <label for="loginEmail">Email or phone number</label>
-        <input type="text" id="loginEmail" name="loginEmail" placeholder="you@example.com" required>
-    </div>
-    <div class="field">
-        <label for="loginPass">Password</label>
-        <input type="password" id="loginPass" name="loginPass" placeholder="••••••••" required>
-    </div>
-    <div class="form-foot">
-        <label class="checkline"><input type="checkbox" name="keepSigned" style="margin-top:2px;"> Keep me signed in</label>
-        <a href="#">Forgot password?</a>
-    </div>
-    <button type="submit" class="btn btn-solid btn-lg" style="width:100%;">Log in</button>
-    <div class="form-msg" id="loginMsg">✓ Logged in — redirecting to your dashboard…</div>
-</form>
-</div>
-
-      <!-- REGISTER -->
-<div class="form-panel" id="form-register">
-    <div>
-        <span class="auth-eyebrow">Start your compatibility profile</span>
-        <h3 id="regHeading">Create your account</h3>
-        <p class="sub" id="regSub">Takes under two minutes. Add your vehicle right after.</p>
-    </div>
-
-    <div class="role-toggle" role="tablist" aria-label="Account type">
-        <button type="button" class="role-btn active" data-role="customer" role="tab" aria-selected="true">
-            <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="6.5" r="3.3" stroke="currentColor" stroke-width="1.5"/><path d="M3.5 17c1.2-3.6 4-5.4 6.5-5.4S15.3 13.4 16.5 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-            Customer
-        </button>
-        <button type="button" class="role-btn" data-role="vendor" role="tab" aria-selected="false">
-            <svg viewBox="0 0 20 20" fill="none"><path d="M3 8l1.2-4.2A1 1 0 015.16 3h9.68a1 1 0 01.96.78L17 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><rect x="3" y="8" width="14" height="8.5" rx="0.6" stroke="currentColor" stroke-width="1.5"/><path d="M7.5 12.2h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-            Vendor
-        </button>
-        <button type="button" class="role-btn" data-role="service_center" role="tab" aria-selected="false">
-            <svg viewBox="0 0 20 20" fill="none"><path d="M12.4 3.6a3.2 3.2 0 00-4.3 3.9L3.7 12a1.5 1.5 0 002.1 2.1l4.5-4.4a3.2 3.2 0 003.9-4.3l-2 2-1.7-.5-.5-1.7 2.4-1.6z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/></svg>
-            Service Center
-        </button>
-    </div>
-    <p class="role-hint" id="roleHint"></p>
-
-    <form id="registerForm" method="post" action="{{ url_for('register') }}" style="display:flex; flex-direction:column; gap:16px;">
-        <!-- ✅ FIXED: Added name="regRole" -->
-        <input type="hidden" id="regRole" name="regRole" value="customer">
-
-        <!-- ✅ FIXED: Added name="regName" -->
-        <div class="field">
-            <label for="regName" id="regNameLabel">Full name</label>
-            <input type="text" id="regName" name="regName" placeholder="Arjun Menon" required>
+        <a href="#service">Service Booking</a>
+        <a href="#about">About</a>
+        <div class="navcta">
+          {% if session.get('user_id') %}
+          <a
+            href="{{ url_for(session['role'] + '_dashboard') }}"
+            class="btn btn-ghost"
+            >Dashboard</a
+          >
+          <a href="{{ url_for('logout') }}" class="btn btn-solid">Log out</a>
+          {% else %}
+          <button class="btn btn-ghost" data-open-auth="login">Log in</button>
+          <button class="btn btn-solid" data-open-auth="register">
+            Register vehicle
+          </button>
+          {% endif %}
         </div>
-        <!-- ✅ FIXED: Added name="regPhone" -->
-        <div class="field">
-            <label for="regPhone">Phone number</label>
-            <input type="tel" id="regPhone" name="regPhone" placeholder="+91 90000 00000" required>
-        </div>
-        <!-- ✅ FIXED: Added name="regEmail" -->
-        <div class="field">
-            <label for="regEmail">Email address</label>
-            <input type="email" id="regEmail" name="regEmail" placeholder="you@example.com" required>
+      </nav>
+    </header>
+
+    <!-- ================= HERO ================= -->
+    <section class="hero" id="top">
+      <div class="wrap hero-grid">
+        <div class="hero-copy reveal in">
+          <span class="eyebrow">Vehicle Compatibility Engine — Live Scan</span>
+          <h1>Find the right part.<br /><em>Every single time.</em></h1>
+          <p class="lead">
+            Register your vehicle once and PartMatch filters every listing
+            across verified vendors down to what actually fits — then tells you
+            when it's time to replace it, before it fails.
+          </p>
+          <div class="hero-actions">
+            <button class="btn btn-solid btn-lg" data-open-auth="register">
+              Register your vehicle
+            </button>
+            <a href="#marketplace" class="btn btn-ghost btn-lg"
+              >Browse spare parts</a
+            >
+          </div>
+          <div class="hero-meta">
+            <div><strong>98.4%</strong><span>Match accuracy</span></div>
+            <div><strong>1,200+</strong><span>Verified vendors</span></div>
+            <div><strong>340+</strong><span>Service stations</span></div>
+          </div>
         </div>
 
-        <!-- vendor-only fields -->
-        <div id="vendorFields" class="vendor-fields" hidden>
-            <div class="vendor-fields-head">
-                <span class="mono">BUSINESS DETAILS</span>
+        <div class="hero-visual reveal in">
+          <div class="scanwrap">
+            <div class="scan-topbar">
+              <span
+                ><span class="dot"></span>SCAN ACTIVE —
+                VIN::7HGCM8...4X219</span
+              >
+              <span>MODEL: Sedan / Petrol / 2021</span>
             </div>
-            <!-- ✅ FIXED: Added name="regBusinessName" -->
-            <div class="field">
-                <label for="regBusinessName">Business / shop name</label>
-                <input type="text" id="regBusinessName" name="regBusinessName" placeholder="Menon Auto Spares">
+            <div class="scan-canvas">
+              <svg viewBox="0 0 600 340" xmlns="http://www.w3.org/2000/svg">
+                <!-- blueprint grid -->
+                <rect x="0" y="0" width="600" height="340" fill="#ffffff" />
+                <g stroke="#e3edde" stroke-width="1">
+                  <line x1="0" y1="60" x2="600" y2="60" />
+                  <line x1="0" y1="120" x2="600" y2="120" />
+                  <line x1="0" y1="180" x2="600" y2="180" />
+                  <line x1="0" y1="240" x2="600" y2="240" />
+                  <line x1="0" y1="300" x2="600" y2="300" />
+                  <line x1="100" y1="0" x2="100" y2="340" />
+                  <line x1="200" y1="0" x2="200" y2="340" />
+                  <line x1="300" y1="0" x2="300" y2="340" />
+                  <line x1="400" y1="0" x2="400" y2="340" />
+                  <line x1="500" y1="0" x2="500" y2="340" />
+                </g>
+
+                <!-- car silhouette -->
+                <g
+                  fill="none"
+                  stroke="#0d3b2c"
+                  stroke-width="2"
+                  stroke-linejoin="round"
+                  stroke-linecap="round"
+                >
+                  <path
+                    d="M65 215 L65 190 Q65 168 88 165 L128 160 Q158 108 208 100 L372 100 Q422 108 452 160 L492 165 Q515 168 515 190 L515 215"
+                  />
+                  <path
+                    d="M65 215 L515 215"
+                    stroke-dasharray="4 4"
+                    stroke-width="1.4"
+                  />
+                  <path d="M148 160 L172 108" stroke-width="1.4" />
+                  <path d="M290 100 L290 160" stroke-width="1.4" />
+                  <path d="M408 108 L432 160" stroke-width="1.4" />
+                </g>
+                <g>
+                  <circle
+                    cx="155"
+                    cy="216"
+                    r="34"
+                    fill="#ffffff"
+                    stroke="#0d3b2c"
+                    stroke-width="2"
+                  />
+                  <circle
+                    cx="155"
+                    cy="216"
+                    r="12"
+                    fill="#eefbf1"
+                    stroke="#178a4c"
+                    stroke-width="1.6"
+                  />
+                  <circle
+                    cx="425"
+                    cy="216"
+                    r="34"
+                    fill="#ffffff"
+                    stroke="#0d3b2c"
+                    stroke-width="2"
+                  />
+                  <circle
+                    cx="425"
+                    cy="216"
+                    r="12"
+                    fill="#eefbf1"
+                    stroke="#178a4c"
+                    stroke-width="1.6"
+                  />
+                </g>
+
+                <!-- diagnostic nodes -->
+                <g class="node">
+                  <circle cx="230" cy="130" r="4" fill="#178a4c" />
+                  <circle
+                    class="pulse"
+                    cx="230"
+                    cy="130"
+                    r="4"
+                    fill="none"
+                    stroke="#1fa85a"
+                    stroke-width="2"
+                  />
+                  <line
+                    x1="230"
+                    y1="130"
+                    x2="230"
+                    y2="40"
+                    stroke="#b8d4c0"
+                    stroke-width="1"
+                    stroke-dasharray="3 3"
+                  />
+                  <text
+                    x="196"
+                    y="30"
+                    font-family="IBM Plex Mono, monospace"
+                    font-size="10"
+                    fill="#4c5f56"
+                  >
+                    ENGINE · OIL DUE
+                  </text>
+                </g>
+                <g class="node">
+                  <circle cx="155" cy="216" r="4" fill="#178a4c" />
+                  <circle
+                    class="pulse"
+                    cx="155"
+                    cy="216"
+                    r="4"
+                    fill="none"
+                    stroke="#1fa85a"
+                    stroke-width="2"
+                  />
+                  <line
+                    x1="155"
+                    y1="252"
+                    x2="155"
+                    y2="300"
+                    stroke="#b8d4c0"
+                    stroke-width="1"
+                    stroke-dasharray="3 3"
+                  />
+                  <text
+                    x="104"
+                    y="316"
+                    font-family="IBM Plex Mono, monospace"
+                    font-size="10"
+                    fill="#4c5f56"
+                  >
+                    BRAKE PAD · 92%
+                  </text>
+                </g>
+                <g class="node">
+                  <circle cx="400" cy="150" r="4" fill="#178a4c" />
+                  <circle
+                    class="pulse"
+                    cx="400"
+                    cy="150"
+                    r="4"
+                    fill="none"
+                    stroke="#1fa85a"
+                    stroke-width="2"
+                  />
+                  <line
+                    x1="400"
+                    y1="150"
+                    x2="470"
+                    y2="90"
+                    stroke="#b8d4c0"
+                    stroke-width="1"
+                    stroke-dasharray="3 3"
+                  />
+                  <text
+                    x="440"
+                    y="80"
+                    font-family="IBM Plex Mono, monospace"
+                    font-size="10"
+                    fill="#4c5f56"
+                  >
+                    BATTERY · OK
+                  </text>
+                </g>
+              </svg>
+              <div class="scanline"></div>
             </div>
-            <!-- ✅ FIXED: Added name="regBusinessAddress" -->
-            <div class="field">
-                <label for="regBusinessAddress">Business address</label>
-                <input type="text" id="regBusinessAddress" name="regBusinessAddress" placeholder="Shop no., street, area">
+            <div class="scan-footer">
+              <span class="match-pill"
+                >3 components flagged &nbsp;→&nbsp;
+                <b>view matched parts</b></span
+              >
             </div>
-            <div class="field-row">
-                <!-- ✅ FIXED: Added name="regCity" -->
+          </div>
+
+          <div class="float-card fc1">
+            <svg class="check-ic" viewBox="0 0 20 20" fill="none">
+              <circle
+                cx="10"
+                cy="10"
+                r="9"
+                stroke="#178a4c"
+                stroke-width="1.4"
+              />
+              <path
+                d="M6 10l2.5 2.5L14 7"
+                stroke="#178a4c"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <span><b>Compatible</b> — Bosch Brake Pad Set</span>
+          </div>
+          <div class="float-card fc2">
+            <svg class="check-ic" viewBox="0 0 20 20" fill="none">
+              <circle
+                cx="10"
+                cy="10"
+                r="9"
+                stroke="#178a4c"
+                stroke-width="1.4"
+              />
+              <path
+                d="M6 10l2.5 2.5L14 7"
+                stroke="#178a4c"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <span><b>4 vendors</b> — from ₹1,240</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= STATS ================= -->
+    <section class="stats">
+      <div class="wrap">
+        <div class="stats-grid reveal">
+          <div class="stat-cell">
+            <strong>52,000+</strong><span>Spare parts catalogued</span>
+          </div>
+          <div class="stat-cell">
+            <strong>1,200+</strong><span>Verified vendors onboarded</span>
+          </div>
+          <div class="stat-cell">
+            <strong>340+</strong><span>Partner service stations</span>
+          </div>
+          <div class="stat-cell">
+            <strong>98.4%</strong><span>Compatibility match accuracy</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= HOW IT WORKS ================= -->
+    <section class="section" id="modules">
+      <div class="wrap">
+        <div class="sec-head reveal">
+          <span class="eyebrow">Process</span>
+          <h2>From registration to a wrench turning — three steps.</h2>
+          <p>
+            No manual searching, no guessing whether a part fits. Your vehicle
+            profile does the filtering for you.
+          </p>
+        </div>
+        <div class="steps">
+          <div class="step reveal">
+            <div class="step-line"></div>
+            <span class="num">01 / REGISTER</span>
+            <h3>Add your vehicle</h3>
+            <p>
+              Enter make, model, variant, fuel type and year once. PartMatch
+              builds a compatibility profile behind the scenes.
+            </p>
+          </div>
+          <div class="step reveal">
+            <div class="step-line"></div>
+            <span class="num">02 / MATCH</span>
+            <h3>Get matched parts</h3>
+            <p>
+              Browse only the parts that fit, compared across verified vendors
+              on price, rating and availability.
+            </p>
+          </div>
+          <div class="step reveal">
+            <div class="step-line"></div>
+            <span class="num">03 / INSTALL</span>
+            <h3>Book installation</h3>
+            <p>
+              Compare nearby service stations and book a slot. Your digital
+              maintenance record updates automatically.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= FEATURES ================= -->
+    <section class="section alt" id="maintenance">
+      <div class="wrap">
+        <div class="sec-head reveal">
+          <span class="eyebrow">Platform capabilities</span>
+          <h2>Built to remove guesswork from vehicle ownership.</h2>
+          <p>
+            Every feature below is designed around one job: making sure the part
+            you buy and the service you book actually fit your vehicle.
+          </p>
+        </div>
+        <div class="feat-grid reveal">
+          <div class="feat-card reticle">
+            <span class="rc-bl"></span><span class="rc-br"></span>
+            <svg class="feat-ic" viewBox="0 0 42 42" fill="none">
+              <rect
+                x="6"
+                y="6"
+                width="30"
+                height="30"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-dasharray="4 3"
+              />
+              <path
+                d="M14 21l5 5 9-11"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <h3>Vehicle Compatibility Engine</h3>
+            <p>
+              Automatically filters the entire catalogue down to parts that
+              match your vehicle's manufacturer, model, variant and year.
+            </p>
+            <span class="feat-tag">MODULE · CUSTOMER</span>
+          </div>
+          <div class="feat-card reticle">
+            <span class="rc-bl"></span><span class="rc-br"></span>
+            <svg class="feat-ic" viewBox="0 0 42 42" fill="none">
+              <path
+                d="M21 6v8M21 28v8M6 21h8M28 21h8"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              />
+              <circle
+                cx="21"
+                cy="21"
+                r="9"
+                stroke="currentColor"
+                stroke-width="1.8"
+              />
+            </svg>
+            <h3>Predictive Maintenance</h3>
+            <p>
+              Uses mileage, service history and manufacturer schedules to flag
+              when oil, brakes, batteries or filters are due.
+            </p>
+            <span class="feat-tag">MODULE · AI ASSISTANT</span>
+          </div>
+          <div class="feat-card reticle">
+            <span class="rc-bl"></span><span class="rc-br"></span>
+            <svg class="feat-ic" viewBox="0 0 42 42" fill="none">
+              <path
+                d="M8 26c0-9 5-16 13-16s13 7 13 16"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              />
+              <path
+                d="M8 26h26v4a2 2 0 01-2 2H10a2 2 0 01-2-2v-4z"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <h3>AI Diagnostic Assistant</h3>
+            <p>
+              Describe a symptom in plain language — get likely causes,
+              recommended parts and an estimated repair cost.
+            </p>
+            <span class="feat-tag">MODULE · AI ASSISTANT</span>
+          </div>
+          <div class="feat-card reticle">
+            <span class="rc-bl"></span><span class="rc-br"></span>
+            <svg class="feat-ic" viewBox="0 0 42 42" fill="none">
+              <rect
+                x="6"
+                y="12"
+                width="30"
+                height="20"
+                stroke="currentColor"
+                stroke-width="1.8"
+              />
+              <path
+                d="M6 18h30M14 12V8h14v4"
+                stroke="currentColor"
+                stroke-width="1.8"
+              />
+            </svg>
+            <h3>Multi-Vendor Marketplace</h3>
+            <p>
+              Compare specifications, ratings and stock availability from
+              verified vendors before you check out.
+            </p>
+            <span class="feat-tag">MODULE · VENDOR</span>
+          </div>
+          <div class="feat-card reticle">
+            <span class="rc-bl"></span><span class="rc-br"></span>
+            <svg class="feat-ic" viewBox="0 0 42 42" fill="none">
+              <rect
+                x="7"
+                y="9"
+                width="28"
+                height="26"
+                rx="1"
+                stroke="currentColor"
+                stroke-width="1.8"
+              />
+              <path
+                d="M7 17h28M14 5v8M28 5v8"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              />
+            </svg>
+            <h3>Service Station Booking</h3>
+            <p>
+              Compare nearby workshops by rating, distance and charges, then
+              confirm an installation slot in a few taps.
+            </p>
+            <span class="feat-tag">MODULE · CUSTOMER</span>
+          </div>
+          <div class="feat-card reticle">
+            <span class="rc-bl"></span><span class="rc-br"></span>
+            <svg class="feat-ic" viewBox="0 0 42 42" fill="none">
+              <path
+                d="M9 33V17M21 33V9M33 33v-9"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+              />
+            </svg>
+            <h3>Digital Maintenance Records</h3>
+            <p>
+              Every completed service updates your vehicle's history
+              automatically — searchable, exportable, always current.
+            </p>
+            <span class="feat-tag">MODULE · CUSTOMER</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= ROLE MODULES / TABS ================= -->
+    <section class="section" id="marketplace">
+      <div class="wrap">
+        <div class="sec-head reveal">
+          <span class="eyebrow">Three dashboards, one platform</span>
+          <h2>Built for owners, vendors and administrators alike.</h2>
+          <p>
+            Each role gets exactly the tools it needs — nothing bolted on,
+            nothing missing.
+          </p>
+        </div>
+
+        <div class="tabs-shell reveal">
+          <div class="tabbtns">
+            <button class="tabbtn active" data-tab="customer">
+              <span class="t-label">Role 01</span
+              ><span class="t-name">Customer</span>
+            </button>
+            <button class="tabbtn" data-tab="vendor">
+              <span class="t-label">Role 02</span
+              ><span class="t-name">Vendor</span>
+            </button>
+            <button class="tabbtn" data-tab="admin">
+              <span class="t-label">Role 03</span
+              ><span class="t-name">Admin</span>
+            </button>
+          </div>
+
+          <div class="tabpanel active" id="panel-customer">
+            <div>
+              <h4>Functions</h4>
+              <ul>
+                <li>Register vehicle &amp; view compatible parts</li>
+                <li>Compare products across vendors</li>
+                <li>Place orders &amp; track delivery</li>
+                <li>Receive maintenance reminders</li>
+                <li>Book service station appointments</li>
+              </ul>
+            </div>
+            <div>
+              <h4>Benefits</h4>
+              <ul>
+                <li>Simplified spare parts purchasing</li>
+                <li>Reduced compatibility issues</li>
+                <li>Personalized maintenance assistance</li>
+                <li>Full digital service history in one place</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="tabpanel" id="panel-vendor">
+            <div>
+              <h4>Functions</h4>
+              <ul>
+                <li>List spare parts with specifications</li>
+                <li>Manage stock &amp; pricing in real time</li>
+                <li>Process and fulfil customer orders</li>
+                <li>Track sales performance</li>
+              </ul>
+            </div>
+            <div>
+              <h4>Benefits</h4>
+              <ul>
+                <li>Efficient inventory management</li>
+                <li>Increased market reach</li>
+                <li>Better sales tracking &amp; reporting</li>
+                <li>Direct customer feedback loop</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="tabpanel" id="panel-admin">
+            <div>
+              <h4>Functions</h4>
+              <ul>
+                <li>Verify vendor accounts &amp; product listings</li>
+                <li>Monitor transactions &amp; flag anomalies</li>
+                <li>Manage categories, brands &amp; disputes</li>
+                <li>Generate marketplace-wide reports</li>
+              </ul>
+            </div>
+            <div>
+              <h4>Benefits</h4>
+              <ul>
+                <li>Centralized system administration</li>
+                <li>Improved platform-wide security</li>
+                <li>Stronger vendor accountability</li>
+                <li>Comprehensive business insight</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= CTA ================= -->
+    <section class="cta-band" id="service">
+      <div class="wrap">
+        <div class="reveal">
+          <h2>Stop guessing which part fits.</h2>
+          <p>
+            Register your vehicle in under two minutes and see your first set of
+            matched parts instantly.
+          </p>
+          <div class="cta-actions">
+            <button class="btn btn-solid btn-lg" data-open-auth="register">
+              Create free account
+            </button>
+            <button class="btn btn-ghost btn-lg" data-open-auth="login">
+              I already have an account
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= FOOTER ================= -->
+    <footer id="about">
+      <div class="wrap">
+        <div class="foot-grid">
+          <div class="foot-brand">
+            <a href="#top" class="brand">
+              <svg class="brand-mark" viewBox="0 0 40 40" fill="none">
+                <rect
+                  x="1"
+                  y="1"
+                  width="38"
+                  height="38"
+                  stroke="#178a4c"
+                  stroke-width="1.4"
+                  stroke-dasharray="3 3"
+                />
+                <path
+                  d="M9 24l2-7c.4-1.2 1.5-2 2.8-2h12.4c1.3 0 2.4.8 2.8 2l2 7"
+                  stroke="#0d3b2c"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M9 24h22v3.5a1.5 1.5 0 01-1.5 1.5h-1a1.5 1.5 0 01-1.5-1.5V26h-15v1.5A1.5 1.5 0 0110.5 29h-1A1.5 1.5 0 018 27.5V24z"
+                  stroke="#0d3b2c"
+                  stroke-width="1.8"
+                  stroke-linejoin="round"
+                />
+                <circle cx="14" cy="24" r="1.6" fill="#178a4c" />
+                <circle cx="26" cy="24" r="1.6" fill="#178a4c" />
+              </svg>
+              <span>PartMatch</span>
+            </a>
+            <p>
+              The AI-powered spare parts marketplace and maintenance
+              recommendation platform — one system for buying, servicing and
+              tracking your vehicle.
+            </p>
+          </div>
+          <div class="foot-col">
+            <h5>Platform</h5>
+            <a href="#marketplace">Marketplace</a>
+            <a href="#maintenance">Maintenance AI</a>
+            <a href="#service">Service Booking</a>
+            <a href="#modules">How It Works</a>
+          </div>
+          <div class="foot-col">
+            <h5>Roles</h5>
+            <a href="#marketplace">For Customers</a>
+            <a href="#marketplace">For Vendors</a>
+            <a href="#marketplace">For Admins</a>
+          </div>
+          <div class="foot-col">
+            <h5>Account</h5>
+            <a data-open-auth="login">Log in</a>
+            <a data-open-auth="register" data-role="customer"
+              >Register as customer</a
+            >
+            <a data-open-auth="register" data-role="vendor"
+              >Register as vendor</a
+            >
+            <a data-open-auth="register" data-role="service_center"
+              >Register as service center</a
+            >
+          </div>
+        </div>
+        <div class="foot-bottom">
+          <span
+            >© 2026 PartMatch. Smart Vehicle Spare Parts Marketplace &amp;
+            Maintenance Recommendation System.</span
+          >
+          <span class="mono">MCA MINI PROJECT · BUILD 1.0</span>
+        </div>
+      </div>
+    </footer>
+
+    <!-- ================= AUTH MODAL ================= -->
+    <div class="modal-overlay" id="authOverlay">
+      <div class="modal-box">
+        <button class="modal-close" id="modalCloseBtn">✕</button>
+        <div class="modal-tabs">
+          <div class="mtab active" data-mtab="login">Log in</div>
+          <div class="mtab" data-mtab="register">Register</div>
+        </div>
+        <div class="modal-body">
+          <div class="form-panel active" id="form-login">
+            <!-- LOGIN -->
+            <form
+              id="loginForm"
+              method="post"
+              action="{{ url_for('login') }}"
+              style="display: flex; flex-direction: column; gap: 16px"
+            >
+              <div class="field">
+                <label for="loginEmail">Email or phone number</label>
+                <input
+                  type="text"
+                  id="loginEmail"
+                  name="loginEmail"
+                  placeholder="you@example.com"
+                  required
+                />
+              </div>
+              <div class="field">
+                <label for="loginPass">Password</label>
+                <input
+                  type="password"
+                  id="loginPass"
+                  name="loginPass"
+                  placeholder="••••••••"
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                class="btn btn-solid btn-lg"
+                style="width: 100%"
+              >
+                Log in
+              </button>
+            </form>
+          </div>
+
+          <!-- REGISTER -->
+          <div class="form-panel" id="form-register">
+            <div>
+              <span class="auth-eyebrow">Start your compatibility profile</span>
+              <h3 id="regHeading">Create your account</h3>
+              <p class="sub" id="regSub">
+                Takes under two minutes. Add your vehicle right after.
+              </p>
+            </div>
+
+            <div class="role-toggle" role="tablist" aria-label="Account type">
+              <button
+                type="button"
+                class="role-btn active"
+                data-role="customer"
+                role="tab"
+                aria-selected="true"
+              >
+                <svg viewBox="0 0 20 20" fill="none">
+                  <circle
+                    cx="10"
+                    cy="6.5"
+                    r="3.3"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                  />
+                  <path
+                    d="M3.5 17c1.2-3.6 4-5.4 6.5-5.4S15.3 13.4 16.5 17"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                  />
+                </svg>
+                Customer
+              </button>
+              <button
+                type="button"
+                class="role-btn"
+                data-role="vendor"
+                role="tab"
+                aria-selected="false"
+              >
+                <svg viewBox="0 0 20 20" fill="none">
+                  <path
+                    d="M3 8l1.2-4.2A1 1 0 015.16 3h9.68a1 1 0 01.96.78L17 8"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <rect
+                    x="3"
+                    y="8"
+                    width="14"
+                    height="8.5"
+                    rx="0.6"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                  />
+                  <path
+                    d="M7.5 12.2h5"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                  />
+                </svg>
+                Vendor
+              </button>
+              <button
+                type="button"
+                class="role-btn"
+                data-role="service_center"
+                role="tab"
+                aria-selected="false"
+              >
+                <svg viewBox="0 0 20 20" fill="none">
+                  <path
+                    d="M12.4 3.6a3.2 3.2 0 00-4.3 3.9L3.7 12a1.5 1.5 0 002.1 2.1l4.5-4.4a3.2 3.2 0 003.9-4.3l-2 2-1.7-.5-.5-1.7 2.4-1.6z"
+                    stroke="currentColor"
+                    stroke-width="1.4"
+                    stroke-linejoin="round"
+                    stroke-linecap="round"
+                  />
+                </svg>
+                Service Center
+              </button>
+            </div>
+            <p class="role-hint" id="roleHint"></p>
+
+            <form
+              id="registerForm"
+              method="post"
+              action="{{ url_for('register') }}"
+              style="display: flex; flex-direction: column; gap: 16px"
+            >
+              <!-- ✅ FIXED: Added name="regRole" -->
+              <input
+                type="hidden"
+                id="regRole"
+                name="regRole"
+                value="customer"
+              />
+
+              <!-- ✅ FIXED: Added name="regName" -->
+              <div class="field">
+                <label for="regName" id="regNameLabel">Full name</label>
+                <input
+                  type="text"
+                  id="regName"
+                  name="regName"
+                  placeholder="Arjun Menon"
+                  required
+                />
+              </div>
+              <!-- ✅ FIXED: Added name="regPhone" -->
+              <div class="field">
+                <label for="regPhone">Phone number</label>
+                <input
+                  type="tel"
+                  id="regPhone"
+                  name="regPhone"
+                  placeholder="+91 90000 00000"
+                  required
+                />
+              </div>
+              <!-- ✅ FIXED: Added name="regEmail" -->
+              <div class="field">
+                <label for="regEmail">Email address</label>
+                <input
+                  type="email"
+                  id="regEmail"
+                  name="regEmail"
+                  placeholder="you@example.com"
+                  required
+                />
+              </div>
+
+              <!-- vendor-only fields -->
+              <div id="vendorFields" class="vendor-fields" hidden>
+                <div class="vendor-fields-head">
+                  <span class="mono">BUSINESS DETAILS</span>
+                </div>
+                <!-- ✅ FIXED: Added name="regBusinessName" -->
                 <div class="field">
+                  <label for="regBusinessName">Business / shop name</label>
+                  <input
+                    type="text"
+                    id="regBusinessName"
+                    name="regBusinessName"
+                    placeholder="Menon Auto Spares"
+                  />
+                </div>
+                <!-- ✅ FIXED: Added name="regBusinessAddress" -->
+                <div class="field">
+                  <label for="regBusinessAddress">Business address</label>
+                  <input
+                    type="text"
+                    id="regBusinessAddress"
+                    name="regBusinessAddress"
+                    placeholder="Shop no., street, area"
+                  />
+                </div>
+                <div class="field-row">
+                  <!-- ✅ FIXED: Added name="regCity" -->
+                  <div class="field">
                     <label for="regCity">City</label>
-                    <input type="text" id="regCity" name="regCity" placeholder="Kochi">
-                </div>
-                <!-- ✅ FIXED: Added name="regPincode" -->
-                <div class="field">
+                    <input
+                      type="text"
+                      id="regCity"
+                      name="regCity"
+                      placeholder="Kochi"
+                    />
+                  </div>
+                  <!-- ✅ FIXED: Added name="regPincode" -->
+                  <div class="field">
                     <label for="regPincode">Pincode</label>
-                    <input type="text" id="regPincode" name="regPincode" placeholder="682001">
+                    <input
+                      type="text"
+                      id="regPincode"
+                      name="regPincode"
+                      placeholder="682001"
+                    />
+                  </div>
                 </div>
-            </div>
-            <div class="field-row">
-                <!-- ✅ FIXED: Added name="regGst" -->
-                <div class="field">
+                <div class="field-row">
+                  <!-- ✅ FIXED: Added name="regGst" -->
+                  <div class="field">
                     <label for="regGst">GST / business reg. no.</label>
-                    <input type="text" id="regGst" name="regGst" placeholder="32AAAAA0000A1Z5">
-                </div>
-                <!-- ✅ FIXED: Added name="regCategory" -->
-                <div class="field">
+                    <input
+                      type="text"
+                      id="regGst"
+                      name="regGst"
+                      placeholder="32AAAAA0000A1Z5"
+                    />
+                  </div>
+                  <!-- ✅ FIXED: Added name="regCategory" -->
+                  <div class="field">
                     <label for="regCategory">Primary product category</label>
                     <select id="regCategory" name="regCategory">
-                        <option>Engine &amp; transmission</option>
-                        <option>Brakes &amp; suspension</option>
-                        <option>Electrical &amp; battery</option>
-                        <option>Body &amp; accessories</option>
-                        <option>Tyres &amp; wheels</option>
-                        <option>Other</option>
+                      <option>Engine &amp; transmission</option>
+                      <option>Brakes &amp; suspension</option>
+                      <option>Electrical &amp; battery</option>
+                      <option>Body &amp; accessories</option>
+                      <option>Tyres &amp; wheels</option>
+                      <option>Other</option>
                     </select>
+                  </div>
                 </div>
-            </div>
-        </div>
+              </div>
 
-        <!-- service center-only fields -->
-        <div id="serviceCenterFields" class="vendor-fields" hidden>
-            <div class="vendor-fields-head">
-                <span class="mono">WORKSHOP DETAILS</span>
-            </div>
-            <!-- ✅ FIXED: Added name="regCenterName" -->
-            <div class="field">
-                <label for="regCenterName">Service center name</label>
-                <input type="text" id="regCenterName" name="regCenterName" placeholder="Menon Auto Care Workshop">
-            </div>
-            <!-- ✅ FIXED: Added name="regCenterAddress" -->
-            <div class="field">
-                <label for="regCenterAddress">Workshop address</label>
-                <input type="text" id="regCenterAddress" name="regCenterAddress" placeholder="Building, street, area">
-            </div>
-            <div class="field-row">
-                <!-- ✅ FIXED: Added name="regCenterCity" -->
+              <!-- service center-only fields -->
+              <div id="serviceCenterFields" class="vendor-fields" hidden>
+                <div class="vendor-fields-head">
+                  <span class="mono">WORKSHOP DETAILS</span>
+                </div>
+                <!-- ✅ FIXED: Added name="regCenterName" -->
                 <div class="field">
+                  <label for="regCenterName">Service center name</label>
+                  <input
+                    type="text"
+                    id="regCenterName"
+                    name="regCenterName"
+                    placeholder="Menon Auto Care Workshop"
+                  />
+                </div>
+                <!-- ✅ FIXED: Added name="regCenterAddress" -->
+                <div class="field">
+                  <label for="regCenterAddress">Workshop address</label>
+                  <input
+                    type="text"
+                    id="regCenterAddress"
+                    name="regCenterAddress"
+                    placeholder="Building, street, area"
+                  />
+                </div>
+                <div class="field-row">
+                  <!-- ✅ FIXED: Added name="regCenterCity" -->
+                  <div class="field">
                     <label for="regCenterCity">City</label>
-                    <input type="text" id="regCenterCity" name="regCenterCity" placeholder="Kochi">
-                </div>
-                <!-- ✅ FIXED: Added name="regCenterPincode" -->
-                <div class="field">
+                    <input
+                      type="text"
+                      id="regCenterCity"
+                      name="regCenterCity"
+                      placeholder="Kochi"
+                    />
+                  </div>
+                  <!-- ✅ FIXED: Added name="regCenterPincode" -->
+                  <div class="field">
                     <label for="regCenterPincode">Pincode</label>
-                    <input type="text" id="regCenterPincode" name="regCenterPincode" placeholder="682001">
+                    <input
+                      type="text"
+                      id="regCenterPincode"
+                      name="regCenterPincode"
+                      placeholder="682001"
+                    />
+                  </div>
                 </div>
-            </div>
-            <div class="field-row">
-                <!-- ✅ FIXED: Added name="regCenterReg" -->
-                <div class="field">
-                    <label for="regCenterReg">Business reg. / license no.</label>
-                    <input type="text" id="regCenterReg" name="regCenterReg" placeholder="32AAAAA0000A1Z5">
-                </div>
-                <!-- ✅ FIXED: Added name="regBays" -->
-                <div class="field">
+                <div class="field-row">
+                  <!-- ✅ FIXED: Added name="regCenterReg" -->
+                  <div class="field">
+                    <label for="regCenterReg"
+                      >Business reg. / license no.</label
+                    >
+                    <input
+                      type="text"
+                      id="regCenterReg"
+                      name="regCenterReg"
+                      placeholder="32AAAAA0000A1Z5"
+                    />
+                  </div>
+                  <!-- ✅ FIXED: Added name="regBays" -->
+                  <div class="field">
                     <label for="regBays">No. of service bays</label>
-                    <input type="number" id="regBays" name="regBays" placeholder="4" min="1">
+                    <input
+                      type="number"
+                      id="regBays"
+                      name="regBays"
+                      placeholder="4"
+                      min="1"
+                    />
+                  </div>
                 </div>
-            </div>
-            <!-- ✅ FIXED: Added name="regSpecialization" -->
-            <div class="field">
-                <label for="regSpecialization">Primary specialization</label>
-                <select id="regSpecialization" name="regSpecialization">
+                <!-- ✅ FIXED: Added name="regSpecialization" -->
+                <div class="field">
+                  <label for="regSpecialization">Primary specialization</label>
+                  <select id="regSpecialization" name="regSpecialization">
                     <option>General service &amp; maintenance</option>
                     <option>Engine &amp; transmission repair</option>
                     <option>Brakes &amp; suspension</option>
@@ -945,190 +2384,263 @@ footer{background:#fff; border-top:1px solid var(--line); padding:64px 0 28px;}
                     <option>Denting, painting &amp; body work</option>
                     <option>Tyres &amp; wheel alignment</option>
                     <option>Multi-brand authorized service</option>
-                </select>
-            </div>
-            <div class="field-row">
-                <!-- ✅ FIXED: Added name="regOpenTime" -->
-                <div class="field">
+                  </select>
+                </div>
+                <div class="field-row">
+                  <!-- ✅ FIXED: Added name="regOpenTime" -->
+                  <div class="field">
                     <label for="regOpenTime">Opening time</label>
-                    <input type="time" id="regOpenTime" name="regOpenTime" value="09:00">
-                </div>
-                <!-- ✅ FIXED: Added name="regCloseTime" -->
-                <div class="field">
+                    <input
+                      type="time"
+                      id="regOpenTime"
+                      name="regOpenTime"
+                      value="09:00"
+                    />
+                  </div>
+                  <!-- ✅ FIXED: Added name="regCloseTime" -->
+                  <div class="field">
                     <label for="regCloseTime">Closing time</label>
-                    <input type="time" id="regCloseTime" name="regCloseTime" value="19:00">
+                    <input
+                      type="time"
+                      id="regCloseTime"
+                      name="regCloseTime"
+                      value="19:00"
+                    />
+                  </div>
                 </div>
-            </div>
-        </div>
+              </div>
 
-        <div class="field">
-            <label for="regPass">Password</label>
-            <input type="password" id="regPass" name="regPass" placeholder="At least 8 characters" required>
+              <div class="field">
+                <label for="regPass">Password</label>
+                <input
+                  type="password"
+                  id="regPass"
+                  name="regPass"
+                  placeholder="At least 8 characters"
+                  required
+                />
+              </div>
+              <label class="checkline"
+                ><input type="checkbox" required style="margin-top: 2px" /> I
+                agree to the Terms of Service and Privacy Policy</label
+              >
+              <label class="checkline" id="vendorAgreeLine" hidden
+                ><input type="checkbox" style="margin-top: 2px" /> My business
+                documents are genuine and available for verification</label
+              >
+              <label class="checkline" id="centerAgreeLine" hidden
+                ><input type="checkbox" style="margin-top: 2px" /> My workshop
+                license and technician details are genuine and available for
+                verification</label
+              >
+              <button
+                type="submit"
+                class="btn btn-solid btn-lg"
+                style="width: 100%"
+                id="regSubmitBtn"
+              >
+                Create account
+              </button>
+              <div class="form-msg" id="registerMsg">
+                ✓ Account created — let's add your vehicle next.
+              </div>
+            </form>
+            <p class="switch-line">
+              Already registered? <b data-switch-to="login">Log in</b>
+            </p>
+          </div>
         </div>
-        <label class="checkline"><input type="checkbox" required style="margin-top:2px;"> I agree to the Terms of Service and Privacy Policy</label>
-        <label class="checkline" id="vendorAgreeLine" hidden><input type="checkbox" style="margin-top:2px;"> My business documents are genuine and available for verification</label>
-        <label class="checkline" id="centerAgreeLine" hidden><input type="checkbox" style="margin-top:2px;"> My workshop license and technician details are genuine and available for verification</label>
-        <button type="submit" class="btn btn-solid btn-lg" style="width:100%;" id="regSubmitBtn">Create account</button>
-        <div class="form-msg" id="registerMsg">✓ Account created — let's add your vehicle next.</div>
-    </form>
-    <p class="switch-line">Already registered? <b data-switch-to="login">Log in</b></p>
-</div>
-
+      </div>
     </div>
-  </div>
-</div>
 
-<<script>
-(function(){
-  // ---- navbar scroll state ----
-  const header = document.getElementById('siteHeader');
-  window.addEventListener('scroll', () => {
-    header.classList.toggle('scrolled', window.scrollY > 12);
-  });
+    <script>
+      (function () {
+        // ---- navbar scroll state ----
+        const header = document.getElementById("siteHeader");
+        window.addEventListener("scroll", () => {
+          header.classList.toggle("scrolled", window.scrollY > 12);
+        });
 
-  // ---- mobile nav ----
-  const hamburger = document.getElementById('hamburgerBtn');
-  const mobileNav = document.getElementById('mobileNav');
-  hamburger.addEventListener('click', () => {
-    mobileNav.classList.toggle('open');
-    hamburger.classList.toggle('active');
-  });
-  mobileNav.querySelectorAll('a, button').forEach(el => {
-    el.addEventListener('click', () => mobileNav.classList.remove('open'));
-  });
+        // ---- mobile nav ----
+        const hamburger = document.getElementById("hamburgerBtn");
+        const mobileNav = document.getElementById("mobileNav");
+        hamburger.addEventListener("click", () => {
+          mobileNav.classList.toggle("open");
+          hamburger.classList.toggle("active");
+        });
+        mobileNav.querySelectorAll("a, button").forEach((el) => {
+          el.addEventListener("click", () =>
+            mobileNav.classList.remove("open"),
+          );
+        });
 
-  // ---- scroll reveal ----
-  const revealEls = document.querySelectorAll('.reveal, .step');
-  const io = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('in');
-        io.unobserve(entry.target);
-      }
-    });
-  }, { threshold: 0.15 });
-  revealEls.forEach(el => io.observe(el));
+        // ---- scroll reveal ----
+        const revealEls = document.querySelectorAll(".reveal, .step");
+        const io = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                entry.target.classList.add("in");
+                io.unobserve(entry.target);
+              }
+            });
+          },
+          { threshold: 0.15 },
+        );
+        revealEls.forEach((el) => io.observe(el));
 
-  // ---- role tabs ----
-  const tabbtns = document.querySelectorAll('.tabbtn');
-  tabbtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      tabbtns.forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.tabpanel').forEach(p => p.classList.remove('active'));
-      btn.classList.add('active');
-      document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
-    });
-  });
+        // ---- role tabs ----
+        const tabbtns = document.querySelectorAll(".tabbtn");
+        tabbtns.forEach((btn) => {
+          btn.addEventListener("click", () => {
+            tabbtns.forEach((b) => b.classList.remove("active"));
+            document
+              .querySelectorAll(".tabpanel")
+              .forEach((p) => p.classList.remove("active"));
+            btn.classList.add("active");
+            document
+              .getElementById("panel-" + btn.dataset.tab)
+              .classList.add("active");
+          });
+        });
 
-  // ---- auth modal ----
-  const overlay = document.getElementById('authOverlay');
-  const closeBtn = document.getElementById('modalCloseBtn');
-  const mtabs = document.querySelectorAll('.mtab');
-  const panels = document.querySelectorAll('.form-panel');
+        // ---- auth modal ----
+        const overlay = document.getElementById("authOverlay");
+        const closeBtn = document.getElementById("modalCloseBtn");
+        const mtabs = document.querySelectorAll(".mtab");
+        const panels = document.querySelectorAll(".form-panel");
 
-  function openAuth(which){
-    overlay.classList.add('open');
-    document.body.style.overflow = 'hidden';
-    setAuthTab(which || 'login');
-  }
-  function closeAuth(){
-    overlay.classList.remove('open');
-    document.body.style.overflow = '';
-  }
-  function setAuthTab(which){
-    mtabs.forEach(t => t.classList.toggle('active', t.dataset.mtab === which));
-    panels.forEach(p => p.classList.toggle('active', p.id === 'form-' + which));
-  }
+        function openAuth(which) {
+          overlay.classList.add("open");
+          document.body.style.overflow = "hidden";
+          setAuthTab(which || "login");
+        }
+        function closeAuth() {
+          overlay.classList.remove("open");
+          document.body.style.overflow = "";
+        }
+        function setAuthTab(which) {
+          mtabs.forEach((t) =>
+            t.classList.toggle("active", t.dataset.mtab === which),
+          );
+          panels.forEach((p) =>
+            p.classList.toggle("active", p.id === "form-" + which),
+          );
+        }
 
-  document.querySelectorAll('[data-open-auth]').forEach(el => {
-    el.addEventListener('click', (e) => {
-      e.preventDefault();
-      const which = el.dataset.openAuth;
-      openAuth(which);
-      if (which === 'register') {
-        setRole(el.dataset.role || 'customer');
-      }
-    });
-  });
-  closeBtn.addEventListener('click', closeAuth);
-  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeAuth(); });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAuth(); });
-  mtabs.forEach(t => t.addEventListener('click', () => setAuthTab(t.dataset.mtab)));
-  document.querySelectorAll('[data-switch-to]').forEach(el => {
-    el.addEventListener('click', () => setAuthTab(el.dataset.switchTo));
-  });
+        document.querySelectorAll("[data-open-auth]").forEach((el) => {
+          el.addEventListener("click", (e) => {
+            e.preventDefault();
+            const which = el.dataset.openAuth;
+            openAuth(which);
+            if (which === "register") {
+              setRole(el.dataset.role || "customer");
+            }
+          });
+        });
+        closeBtn.addEventListener("click", closeAuth);
+        overlay.addEventListener("click", (e) => {
+          if (e.target === overlay) closeAuth();
+        });
+        document.addEventListener("keydown", (e) => {
+          if (e.key === "Escape") closeAuth();
+        });
+        mtabs.forEach((t) =>
+          t.addEventListener("click", () => setAuthTab(t.dataset.mtab)),
+        );
+        document.querySelectorAll("[data-switch-to]").forEach((el) => {
+          el.addEventListener("click", () => setAuthTab(el.dataset.switchTo));
+        });
 
-  // ---- register: customer / vendor / service center role toggle ----
-  const roleBtns = document.querySelectorAll('.role-btn');
-  const vendorFields = document.getElementById('vendorFields');
-  const vendorAgreeLine = document.getElementById('vendorAgreeLine');
-  const serviceCenterFields = document.getElementById('serviceCenterFields');
-  const centerAgreeLine = document.getElementById('centerAgreeLine');
-  const regRoleInput = document.getElementById('regRole');
-  const regHeading = document.getElementById('regHeading');
-  const regSub = document.getElementById('regSub');
-  const regNameLabel = document.getElementById('regNameLabel');
-  const regSubmitBtn = document.getElementById('regSubmitBtn');
-  const registerMsg = document.getElementById('registerMsg');
-  const roleHint = document.getElementById('roleHint');
-  const vendorOnlyIds = ['regBusinessName','regBusinessAddress','regCity','regPincode'];
-  const centerOnlyIds = ['regCenterName','regCenterAddress','regCenterCity','regCenterPincode'];
+        // ---- register: customer / vendor / service center role toggle ----
+        const roleBtns = document.querySelectorAll(".role-btn");
+        const vendorFields = document.getElementById("vendorFields");
+        const vendorAgreeLine = document.getElementById("vendorAgreeLine");
+        const serviceCenterFields = document.getElementById(
+          "serviceCenterFields",
+        );
+        const centerAgreeLine = document.getElementById("centerAgreeLine");
+        const regRoleInput = document.getElementById("regRole");
+        const regHeading = document.getElementById("regHeading");
+        const regSub = document.getElementById("regSub");
+        const regNameLabel = document.getElementById("regNameLabel");
+        const regSubmitBtn = document.getElementById("regSubmitBtn");
+        const registerMsg = document.getElementById("registerMsg");
+        const roleHint = document.getElementById("roleHint");
+        const vendorOnlyIds = [
+          "regBusinessName",
+          "regBusinessAddress",
+          "regCity",
+          "regPincode",
+        ];
+        const centerOnlyIds = [
+          "regCenterName",
+          "regCenterAddress",
+          "regCenterCity",
+          "regCenterPincode",
+        ];
 
-  const roleCopy = {
-    customer: {
-      heading: 'Create your account',
-      sub: 'Takes under two minutes. Add your vehicle right after.',
-      nameLabel: 'Full name',
-      submit: 'Create account',
-      msg: "✓ Account created — let's add your vehicle next.",
-      hint: ''
-    },
-    vendor: {
-      heading: 'Register your business',
-      sub: 'Tell us about your shop — every vendor is verified before listings go live.',
-      nameLabel: 'Owner / contact name',
-      submit: 'Submit for verification',
-      msg: '✓ Application submitted — our team will verify your business shortly.',
-      hint: 'For spare parts sellers listing products on the marketplace.'
-    },
-    service_center: {
-      heading: 'Register your service center',
-      sub: 'Tell us about your workshop — get listed so customers can book installations with you.',
-      nameLabel: 'Owner / manager name',
-      submit: 'Submit for verification',
-      msg: '✓ Application submitted — our team will verify your workshop shortly.',
-      hint: 'For garages and workshops that install parts and offer vehicle servicing.'
-    }
-  };
+        const roleCopy = {
+          customer: {
+            heading: "Create your account",
+            sub: "Takes under two minutes. Add your vehicle right after.",
+            nameLabel: "Full name",
+            submit: "Create account",
+            msg: "✓ Account created — let's add your vehicle next.",
+            hint: "",
+          },
+          vendor: {
+            heading: "Register your business",
+            sub: "Tell us about your shop — every vendor is verified before listings go live.",
+            nameLabel: "Owner / contact name",
+            submit: "Submit for verification",
+            msg: "✓ Application submitted — our team will verify your business shortly.",
+            hint: "For spare parts sellers listing products on the marketplace.",
+          },
+          service_center: {
+            heading: "Register your service center",
+            sub: "Tell us about your workshop — get listed so customers can book installations with you.",
+            nameLabel: "Owner / manager name",
+            submit: "Submit for verification",
+            msg: "✓ Application submitted — our team will verify your workshop shortly.",
+            hint: "For garages and workshops that install parts and offer vehicle servicing.",
+          },
+        };
 
-  function setRole(role){
-    roleBtns.forEach(b => {
-      const active = b.dataset.role === role;
-      b.classList.toggle('active', active);
-      b.setAttribute('aria-selected', String(active));
-    });
-    regRoleInput.value = role;
-    const isVendor = role === 'vendor';
-    const isCenter = role === 'service_center';
+        function setRole(role) {
+          roleBtns.forEach((b) => {
+            const active = b.dataset.role === role;
+            b.classList.toggle("active", active);
+            b.setAttribute("aria-selected", String(active));
+          });
+          regRoleInput.value = role;
+          const isVendor = role === "vendor";
+          const isCenter = role === "service_center";
 
-    vendorFields.hidden = !isVendor;
-    vendorAgreeLine.hidden = !isVendor;
-    vendorOnlyIds.forEach(id => { document.getElementById(id).required = isVendor; });
+          vendorFields.hidden = !isVendor;
+          vendorAgreeLine.hidden = !isVendor;
+          vendorOnlyIds.forEach((id) => {
+            document.getElementById(id).required = isVendor;
+          });
 
-    serviceCenterFields.hidden = !isCenter;
-    centerAgreeLine.hidden = !isCenter;
-    centerOnlyIds.forEach(id => { document.getElementById(id).required = isCenter; });
+          serviceCenterFields.hidden = !isCenter;
+          centerAgreeLine.hidden = !isCenter;
+          centerOnlyIds.forEach((id) => {
+            document.getElementById(id).required = isCenter;
+          });
 
-    const copy = roleCopy[role] || roleCopy.customer;
-    regHeading.textContent = copy.heading;
-    regSub.textContent = copy.sub;
-    regNameLabel.textContent = copy.nameLabel;
-    regSubmitBtn.textContent = copy.submit;
-    registerMsg.textContent = copy.msg;
-    roleHint.textContent = copy.hint;
-  }
-  roleBtns.forEach(b => b.addEventListener('click', () => setRole(b.dataset.role)));
-})();
-</script>
-</body>
+          const copy = roleCopy[role] || roleCopy.customer;
+          regHeading.textContent = copy.heading;
+          regSub.textContent = copy.sub;
+          regNameLabel.textContent = copy.nameLabel;
+          regSubmitBtn.textContent = copy.submit;
+          registerMsg.textContent = copy.msg;
+          roleHint.textContent = copy.hint;
+        }
+        roleBtns.forEach((b) =>
+          b.addEventListener("click", () => setRole(b.dataset.role)),
+        );
+      })();
+    </script>
+  </body>
 </html>
