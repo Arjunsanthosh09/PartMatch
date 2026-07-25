@@ -450,7 +450,6 @@
 
 <script>
 (function(){
-    // ---- count-up animation for stat values ----
     var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     document.querySelectorAll('.stat-value[data-count]').forEach(function(el){
         var target = parseFloat(el.getAttribute('data-count')) || 0;

@@ -193,7 +193,65 @@ def vendor_dashboard():
     if 'user_id' not in session or session.get('role') != 'vendor':
         flash('Please login as a vendor.', 'warning')
         return redirect(url_for('home'))
-    return render_template('vendor/dashboard.html')
+    
+    vendor_id = session['user_id']
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Product stats
+    cursor.execute("SELECT COUNT(*) as total FROM products WHERE vendor_id = %s", (vendor_id,))
+    total_products = cursor.fetchone()['total']
+    
+    cursor.execute("SELECT COUNT(*) as total FROM products WHERE vendor_id = %s AND is_approved = 1", (vendor_id,))
+    approved_products = cursor.fetchone()['total']
+    
+    cursor.execute("SELECT COUNT(*) as total FROM products WHERE vendor_id = %s AND is_approved = 0", (vendor_id,))
+    pending_products = cursor.fetchone()['total']
+    
+    # Orders for this vendor's products
+    cursor.execute("""
+        SELECT COUNT(DISTINCT o.id) as total 
+        FROM orders o 
+        JOIN order_items oi ON o.id = oi.order_id 
+        JOIN products p ON oi.product_id = p.id 
+        WHERE p.vendor_id = %s
+    """, (vendor_id,))
+    total_orders = cursor.fetchone()['total']
+    
+    # Recent products
+    cursor.execute("""
+        SELECT p.*, pc.name as category_name 
+        FROM products p 
+        LEFT JOIN product_categories pc ON p.category_id = pc.id 
+        WHERE p.vendor_id = %s 
+        ORDER BY p.created_at DESC 
+        LIMIT 10
+    """, (vendor_id,))
+    products = cursor.fetchall()
+    
+    # Recent orders
+    cursor.execute("""
+        SELECT DISTINCT o.*, u.name as customer_name 
+        FROM orders o 
+        JOIN order_items oi ON o.id = oi.order_id 
+        JOIN products p ON oi.product_id = p.id 
+        JOIN users u ON o.customer_id = u.id 
+        WHERE p.vendor_id = %s 
+        ORDER BY o.created_at DESC 
+        LIMIT 10
+    """, (vendor_id,))
+    recent_orders = cursor.fetchall()
+    
+    cursor.close()
+    conn.close()
+    
+    return render_template('vendor/dashboard.html',
+                         total_products=total_products,
+                         approved_products=approved_products,
+                         pending_products=pending_products,
+                         total_orders=total_orders,
+                         products=products,
+                         recent_orders=recent_orders)
 
 # ------------------ Service Center Dashboard ------------------
 @app.route('/service_center/dashboard')
@@ -536,6 +594,131 @@ def debug_session():
     <p>role: {session.get('role', 'NOT SET')}</p>
     <p>user_name: {session.get('user_name', 'NOT SET')}</p>
     """
+   
+# ------------------ Vendor: Add Product ------------------
+@app.route('/vendor/add-product', methods=['GET', 'POST'])
+def vendor_add_product():
+    if 'user_id' not in session or session.get('role') != 'vendor':
+        flash('Please login as a vendor.', 'warning')
+        return redirect(url_for('home'))
     
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM product_categories ORDER BY name")
+    categories = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    
+    if request.method == 'POST':
+        name = request.form.get('name')
+        category_id = request.form.get('category_id')
+        brand = request.form.get('brand')
+        part_number = request.form.get('part_number')
+        price = request.form.get('price')
+        stock = request.form.get('stock_quantity')
+        description = request.form.get('description')
+        compatibility = request.form.get('compatibility')  # JSON string
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO products (vendor_id, category_id, name, description, brand, part_number, price, stock_quantity, compatibility)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        """, (session['user_id'], category_id, name, description, brand, part_number, price, stock, compatibility))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        flash('Product added! Waiting for admin approval.', 'success')
+        return redirect(url_for('vendor_dashboard'))
+    
+    return render_template('vendor/add_product.html', categories=categories)
+
+# ------------------ Vendor: Manage Inventory ------------------
+@app.route('/vendor/inventory')
+def vendor_manage_inventory():
+    if 'user_id' not in session or session.get('role') != 'vendor':
+        return redirect(url_for('home'))
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT p.*, pc.name as category_name 
+        FROM products p 
+        LEFT JOIN product_categories pc ON p.category_id = pc.id 
+        WHERE p.vendor_id = %s 
+        ORDER BY p.created_at DESC
+    """, (session['user_id'],))
+    products = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    
+    return render_template('vendor/manage_inventory.html', products=products)
+
+# ------------------ Vendor: Orders ------------------
+@app.route('/vendor/orders')
+def vendor_orders():
+    if 'user_id' not in session or session.get('role') != 'vendor':
+        return redirect(url_for('home'))
+    return render_template('vendor/orders.html')
+
+# ------------------ Vendor: Edit Product ------------------
+@app.route('/vendor/edit-product/<int:product_id>', methods=['GET', 'POST'])
+def vendor_edit_product(product_id):
+    if 'user_id' not in session or session.get('role') != 'vendor':
+        return redirect(url_for('home'))
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    if request.method == 'POST':
+        name = request.form.get('name')
+        category_id = request.form.get('category_id')
+        brand = request.form.get('brand')
+        part_number = request.form.get('part_number')
+        price = request.form.get('price')
+        stock = request.form.get('stock_quantity')
+        description = request.form.get('description')
+        
+        cursor.execute("""
+            UPDATE products 
+            SET name=%s, category_id=%s, brand=%s, part_number=%s, price=%s, stock_quantity=%s, description=%s 
+            WHERE id=%s AND vendor_id=%s
+        """, (name, category_id, brand, part_number, price, stock, description, product_id, session['user_id']))
+        conn.commit()
+        flash('Product updated!', 'success')
+        return redirect(url_for('vendor_manage_inventory'))
+    
+    cursor.execute("SELECT * FROM products WHERE id = %s AND vendor_id = %s", (product_id, session['user_id']))
+    product = cursor.fetchone()
+    
+    cursor.execute("SELECT * FROM product_categories ORDER BY name")
+    categories = cursor.fetchall()
+    
+    cursor.close()
+    conn.close()
+    
+    if not product:
+        flash('Product not found.', 'danger')
+        return redirect(url_for('vendor_manage_inventory'))
+    
+    return render_template('vendor/edit_product.html', product=product, categories=categories)
+
+# ------------------ Vendor: Delete Product ------------------
+@app.route('/vendor/delete-product/<int:product_id>')
+def vendor_delete_product(product_id):
+    if 'user_id' not in session or session.get('role') != 'vendor':
+        return redirect(url_for('home'))
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM products WHERE id = %s AND vendor_id = %s", (product_id, session['user_id']))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    
+    flash('Product deleted.', 'info')
+    return redirect(url_for('vendor_manage_inventory'))
+
 if __name__ == '__main__':
     app.run(debug=True)

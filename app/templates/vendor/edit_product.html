@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add Product — Vendor</title>
+    <title>Edit Product — Vendor</title>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         :root{
@@ -15,20 +15,17 @@
         *{box-sizing:border-box; margin:0; padding:0;}
         body{font-family:'Inter',sans-serif; color:var(--ink); background:var(--bg-soft);}
         .wrap{max-width:800px; margin:0 auto; padding:0 32px;}
-        h1,h2,h3{font-family:'Space Grotesk',sans-serif;}
+        h1,h2{font-family:'Space Grotesk',sans-serif;}
         .btn{font-family:'Inter',sans-serif; font-weight:600; font-size:14px; cursor:pointer; border:none; padding:11px 20px; border-radius:2px; display:inline-flex; align-items:center; gap:8px; text-decoration:none;}
         .btn-solid{background:var(--green-700); color:#fff; width:100%; justify-content:center;}
         .btn-ghost{background:transparent; color:var(--ink); border:1px solid var(--line-strong);}
         .btn-sm{padding:6px 14px; font-size:12px;}
-        .eyebrow{display:inline-flex; align-items:center; gap:8px; font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--green-700); padding:6px 12px; border:1px dashed var(--line-strong); background:var(--green-050);}
-        .eyebrow::before{content:""; width:6px; height:6px; background:var(--green-500); border-radius:50%;}
         .form-card{background:#fff; border:1px solid var(--line); border-radius:4px; padding:32px;}
         .field{margin-bottom:16px;}
         .field label{display:block; font-size:13px; font-weight:600; margin-bottom:6px; color:var(--ink);}
         .field input,.field select,.field textarea{width:100%; padding:10px 12px; border:1px solid var(--line-strong); border-radius:2px; font-family:'Inter',sans-serif; font-size:14px; background:var(--bg-soft);}
         .field input:focus,.field select:focus,.field textarea:focus{outline:none; border-color:var(--green-600); background:#fff;}
         .field-row{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
-        @media(max-width:500px){.field-row{grid-template-columns:1fr;}}
     </style>
 </head>
 <body>
@@ -36,69 +33,52 @@
 <div style="background:#fff; border-bottom:1px solid var(--line); padding:12px 0; margin-bottom:30px;">
     <div class="wrap" style="display:flex; gap:12px; align-items:center;">
         <strong style="font-family:'Space Grotesk',sans-serif; font-size:18px;">🏪 PartMatch Vendor</strong>
-        <a href="{{ url_for('vendor_dashboard') }}" class="btn btn-ghost btn-sm">← Back</a>
-        <a href="{{ url_for('logout') }}" class="btn btn-solid btn-sm" style="margin-left:auto;">🚪 Logout</a>
+        <a href="{{ url_for('vendor_manage_inventory') }}" class="btn btn-ghost btn-sm">← Back</a>
     </div>
 </div>
 
 <div class="wrap">
-    <div style="margin-bottom:24px;">
-        <span class="eyebrow">Add Product</span>
-        <h2 style="font-size:28px; margin-top:8px;">List a New Spare Part</h2>
-        <p style="color:var(--ink-soft); margin-top:6px;">Products require admin approval before appearing on the marketplace.</p>
-    </div>
+    <h2 style="margin-bottom:24px;">✏️ Edit Product</h2>
 
     <div class="form-card">
         <form method="POST">
             <div class="field">
                 <label>Product Name *</label>
-                <input type="text" name="name" placeholder="e.g. Bosch Brake Pad Set" required>
+                <input type="text" name="name" value="{{ product.name }}" required>
             </div>
-            
             <div class="field-row">
                 <div class="field">
                     <label>Category</label>
                     <select name="category_id">
-                        <option value="">Select category</option>
                         {% for cat in categories %}
-                        <option value="{{ cat.id }}">{{ cat.name }}</option>
+                        <option value="{{ cat.id }}" {% if cat.id == product.category_id %}selected{% endif %}>{{ cat.name }}</option>
                         {% endfor %}
                     </select>
                 </div>
                 <div class="field">
                     <label>Brand</label>
-                    <input type="text" name="brand" placeholder="e.g. Bosch">
+                    <input type="text" name="brand" value="{{ product.brand or '' }}">
                 </div>
             </div>
-            
             <div class="field-row">
                 <div class="field">
                     <label>Part Number</label>
-                    <input type="text" name="part_number" placeholder="e.g. BP-4502">
+                    <input type="text" name="part_number" value="{{ product.part_number or '' }}">
                 </div>
                 <div class="field">
                     <label>Price (₹) *</label>
-                    <input type="number" name="price" step="0.01" placeholder="0.00" required>
+                    <input type="number" name="price" step="0.01" value="{{ product.price }}" required>
                 </div>
             </div>
-            
             <div class="field">
                 <label>Stock Quantity *</label>
-                <input type="number" name="stock_quantity" value="1" min="0" required>
+                <input type="number" name="stock_quantity" value="{{ product.stock_quantity }}" min="0" required>
             </div>
-            
             <div class="field">
                 <label>Description</label>
-                <textarea name="description" rows="3" placeholder="Describe the product..."></textarea>
+                <textarea name="description" rows="3">{{ product.description or '' }}</textarea>
             </div>
-            
-            <div class="field">
-                <label>Compatibility (JSON format)</label>
-                <textarea name="compatibility" rows="3" placeholder='{"make":"Maruti","model":"Swift","year":"2020-2023"}'>{"make":"","model":"","year":""}</textarea>
-                <small style="color:var(--ink-faint);">Specify which vehicles this part fits.</small>
-            </div>
-            
-            <button type="submit" class="btn btn-solid">➕ Add Product</button>
+            <button type="submit" class="btn btn-solid">💾 Update Product</button>
         </form>
     </div>
 </div>
