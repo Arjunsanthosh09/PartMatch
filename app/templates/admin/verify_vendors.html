@@ -283,7 +283,24 @@
             <svg viewBox="0 0 20 20" fill="none"><path d="M4 16V8M10 16V4M16 16v-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
             Reports
         </a>
-
+        <a href="{{ url_for('admin_profile') }}" class="navlink">
+          <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
+            <circle
+              cx="10"
+              cy="7"
+              r="3.5"
+              stroke="currentColor"
+              stroke-width="1.5"
+            />
+            <path
+              d="M3 18c1.5-4 4-6 7-6s5.5 2 7 6"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+            />
+          </svg>
+          Profile
+        </a>
         <div class="nav-spacer"></div>
         <a href="{{ url_for('logout') }}" class="navlink logout">
             <svg viewBox="0 0 20 20" fill="none"><path d="M8 17H4.5A1.5 1.5 0 013 15.5v-11A1.5 1.5 0 014.5 3H8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 13.5L17 10l-4-3.5M17 10H8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>

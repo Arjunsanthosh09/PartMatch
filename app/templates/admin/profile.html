@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Profile — PartMatch</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root{
+          --white:#fff; --bg-soft:#f4faf5; --ink:#0f1e17; --ink-soft:#4c5f56;
+          --ink-faint:#8a9992; --green-700:#146c43; --green-600:#178a4c;
+          --green-500:#1fa85a; --green-050:#eefbf1; --line:#d9e9dd;
+          --line-strong:#b8d4c0;
+        }
+        *{box-sizing:border-box; margin:0; padding:0;}
+        body{font-family:'Inter',sans-serif; color:var(--ink); background:var(--bg-soft);}
+        .wrap{max-width:800px; margin:0 auto; padding:0 32px;}
+        h1,h2,h3{font-family:'Space Grotesk',sans-serif;}
+        .card{background:#fff; border:1px solid var(--line); border-radius:4px; padding:28px; margin-bottom:24px;}
+        .btn{font-family:'Inter',sans-serif; font-weight:600; font-size:14px; cursor:pointer; border:none; padding:11px 20px; border-radius:2px; display:inline-flex; align-items:center; gap:8px; text-decoration:none;}
+        .btn-solid{background:var(--green-700); color:#fff;}
+        .btn-ghost{background:transparent; color:var(--ink); border:1px solid var(--line-strong);}
+        .btn-sm{padding:6px 14px; font-size:12px;}
+        .field{margin-bottom:14px;}
+        .field label{display:block; font-size:13px; font-weight:600; margin-bottom:5px;}
+        .field input{width:100%; padding:10px 12px; border:1px solid var(--line-strong); border-radius:2px; font-size:14px; font-family:'Inter',sans-serif;}
+        .field input:focus{outline:none; border-color:var(--green-600);}
+        .field-row{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+        .profile-header{display:flex; align-items:center; gap:20px; margin-bottom:24px;}
+        .avatar{width:60px; height:60px; border-radius:50%; background:#e74c3c; color:#fff; display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:700;}
+        .badge{display:inline-block; padding:3px 10px; border-radius:2px; font-size:11px; font-weight:600;}
+        .badge-danger{background:#fadbd8; color:#e74c3c;}
+        @media(max-width:600px){.field-row{grid-template-columns:1fr;}}
+    </style>
+</head>
+<body>
+
+<div style="background:#fff; border-bottom:1px solid var(--line); padding:12px 0; margin-bottom:30px;">
+    <div class="wrap" style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+        <strong style="font-family:'Space Grotesk',sans-serif; font-size:18px; margin-right:20px;">⚙️ PartMatch Admin</strong>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-ghost btn-sm">🏠 Dashboard</a>
+        <a href="{{ url_for('admin_users') }}" class="btn btn-ghost btn-sm">👥 Users</a>
+        <a href="{{ url_for('admin_vendors') }}" class="btn btn-ghost btn-sm">🏪 Vendors</a>
+        <a href="{{ url_for('admin_profile') }}" class="btn btn-ghost btn-sm">👤 Profile</a>
+        <a href="{{ url_for('logout') }}" class="btn btn-solid btn-sm" style="margin-left:auto;">🚪 Logout</a>
+    </div>
+</div>
+
+<div class="wrap">
+    <div class="profile-header">
+        <div class="avatar">{{ user.name[:1].upper() }}</div>
+        <div>
+            <h2>{{ user.name }}</h2>
+            <p style="color:var(--ink-soft);">{{ user.email }}</p>
+            <span class="badge badge-danger">Administrator</span>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3 style="margin-bottom:18px;">✏️ Edit Profile</h3>
+        <form method="POST">
+            <div class="field-row">
+                <div class="field">
+                    <label>Full Name</label>
+                    <input type="text" name="name" value="{{ user.name }}" required>
+                </div>
+                <div class="field">
+                    <label>Phone Number</label>
+                    <input type="tel" name="phone" value="{{ user.phone or '' }}">
+                </div>
+            </div>
+            <div class="field">
+                <label>Email (cannot be changed)</label>
+                <input type="email" value="{{ user.email }}" disabled style="background:#eee;">
+            </div>
+            <div class="field">
+                <label>New Password (leave blank to keep current)</label>
+                <input type="password" name="new_password" placeholder="Enter new password">
+            </div>
+            <button type="submit" class="btn btn-solid">💾 Save Changes</button>
+        </form>
+    </div>
+</div>
+
+</body>
+</html>

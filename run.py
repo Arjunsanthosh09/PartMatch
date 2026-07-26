@@ -1,13 +1,24 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 import pymysql
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
 import json
+import os
 
 app = Flask(__name__,
             template_folder="app/templates",
             static_folder="app/static")
 app.secret_key = 'your-secret-key-change-me'
+
+UPLOAD_FOLDER = 'app/static/uploads/products'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 
 # ------------------ MySQL connection helper ------------------
 def get_db_connection():
@@ -596,6 +607,7 @@ def debug_session():
     """
    
 # ------------------ Vendor: Add Product ------------------
+
 @app.route('/vendor/add-product', methods=['GET', 'POST'])
 def vendor_add_product():
     if 'user_id' not in session or session.get('role') != 'vendor':
@@ -617,14 +629,24 @@ def vendor_add_product():
         price = request.form.get('price')
         stock = request.form.get('stock_quantity')
         description = request.form.get('description')
-        compatibility = request.form.get('compatibility')  # JSON string
+        compatibility = request.form.get('compatibility')
+        
+        # ----- IMAGE UPLOAD -----
+        image_filename = None
+        if 'product_image' in request.files:
+            file = request.files['product_image']
+            if file and file.filename and allowed_file(file.filename):
+                ext = file.filename.rsplit('.', 1)[1].lower()
+                # Unique filename: vendorId_timestamp.ext
+                image_filename = f"vendor{session['user_id']}_{datetime.now().strftime('%Y%m%d%H%M%S')}.{ext}"
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], image_filename))
         
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT INTO products (vendor_id, category_id, name, description, brand, part_number, price, stock_quantity, compatibility)
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
-        """, (session['user_id'], category_id, name, description, brand, part_number, price, stock, compatibility))
+            INSERT INTO products (vendor_id, category_id, name, description, brand, part_number, price, stock_quantity, compatibility, image)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        """, (session['user_id'], category_id, name, description, brand, part_number, price, stock, compatibility, image_filename))
         conn.commit()
         cursor.close()
         conn.close()
@@ -633,6 +655,7 @@ def vendor_add_product():
         return redirect(url_for('vendor_dashboard'))
     
     return render_template('vendor/add_product.html', categories=categories)
+
 
 # ------------------ Vendor: Manage Inventory ------------------
 @app.route('/vendor/inventory')
@@ -719,6 +742,103 @@ def vendor_delete_product(product_id):
     
     flash('Product deleted.', 'info')
     return redirect(url_for('vendor_manage_inventory'))
+
+# ------------------ Customer Profile ------------------
+@app.route('/customer/profile', methods=['GET', 'POST'])
+def customer_profile():
+    if 'user_id' not in session or session.get('role') != 'customer':
+        return redirect(url_for('home'))
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    if request.method == 'POST':
+        name = request.form.get('name')
+        phone = request.form.get('phone')
+        cursor.execute("UPDATE users SET name=%s, phone=%s WHERE id=%s", (name, phone, session['user_id']))
+        conn.commit()
+        flash('Profile updated!', 'success')
+        return redirect(url_for('customer_profile'))
+    
+    cursor.execute("SELECT * FROM users WHERE id = %s", (session['user_id'],))
+    user = cursor.fetchone()
+    
+    # Get user's vehicles
+    cursor.execute("SELECT * FROM vehicles WHERE user_id = %s", (session['user_id'],))
+    vehicles = cursor.fetchall()
+    
+    cursor.close()
+    conn.close()
+    
+    return render_template('customer/profile.html', user=user, vehicles=vehicles)
+
+# ------------------ Vendor Profile ------------------
+@app.route('/vendor/profile', methods=['GET', 'POST'])
+def vendor_profile():
+    if 'user_id' not in session or session.get('role') != 'vendor':
+        return redirect(url_for('home'))
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    if request.method == 'POST':
+        name = request.form.get('name')
+        phone = request.form.get('phone')
+        business_name = request.form.get('business_name')
+        gst = request.form.get('gst_number')
+        city = request.form.get('city')
+        address = request.form.get('address')
+        
+        cursor.execute("UPDATE users SET name=%s, phone=%s WHERE id=%s", (name, phone, session['user_id']))
+        cursor.execute("UPDATE vendor_details SET business_name=%s, gst_number=%s, city=%s, address=%s WHERE user_id=%s", 
+                      (business_name, gst, city, address, session['user_id']))
+        conn.commit()
+        flash('Profile updated!', 'success')
+        return redirect(url_for('vendor_profile'))
+    
+    cursor.execute("""
+        SELECT u.*, vd.business_name, vd.gst_number, vd.city, vd.address, vd.is_approved
+        FROM users u
+        JOIN vendor_details vd ON u.id = vd.user_id
+        WHERE u.id = %s
+    """, (session['user_id'],))
+    user = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    
+    return render_template('vendor/profile.html', user=user)
+
+# ------------------ Admin Profile ------------------
+@app.route('/admin/profile', methods=['GET', 'POST'])
+def admin_profile():
+    if 'user_id' not in session or session.get('role') != 'admin':
+        return redirect(url_for('home'))
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    if request.method == 'POST':
+        name = request.form.get('name')
+        phone = request.form.get('phone')
+        new_password = request.form.get('new_password')
+        
+        if new_password:
+            hashed = generate_password_hash(new_password)
+            cursor.execute("UPDATE users SET name=%s, phone=%s, password_hash=%s WHERE id=%s", 
+                          (name, phone, hashed, session['user_id']))
+        else:
+            cursor.execute("UPDATE users SET name=%s, phone=%s WHERE id=%s", 
+                          (name, phone, session['user_id']))
+        conn.commit()
+        flash('Profile updated!', 'success')
+        return redirect(url_for('admin_profile'))
+    
+    cursor.execute("SELECT * FROM users WHERE id = %s", (session['user_id'],))
+    user = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    
+    return render_template('admin/profile.html', user=user)
 
 if __name__ == '__main__':
     app.run(debug=True)
