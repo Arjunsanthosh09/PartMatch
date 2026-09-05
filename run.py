@@ -191,12 +191,66 @@ def logout():
     return redirect(url_for('home'))
 
 # ------------------ Customer Dashboard ------------------
+# ------------------ Customer Dashboard ------------------
 @app.route('/customer/dashboard')
 def customer_dashboard():
     if 'user_id' not in session or session.get('role') != 'customer':
         flash('Please login as a customer.', 'warning')
         return redirect(url_for('home'))
-    return render_template('customer/dashboard.html')
+    
+    customer_id = session['user_id']
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Count vehicles
+    cursor.execute("SELECT COUNT(*) as total FROM vehicles WHERE user_id = %s", (customer_id,))
+    vehicle_count = cursor.fetchone()['total']
+    
+    # Get user's vehicles
+    cursor.execute("SELECT * FROM vehicles WHERE user_id = %s ORDER BY created_at DESC LIMIT 3", (customer_id,))
+    vehicles = cursor.fetchall()
+    
+    # Recent orders
+    cursor.execute("""
+        SELECT o.*, COUNT(oi.id) as item_count
+        FROM orders o
+        LEFT JOIN order_items oi ON o.id = oi.order_id
+        WHERE o.customer_id = %s
+        GROUP BY o.id
+        ORDER BY o.created_at DESC
+        LIMIT 5
+    """, (customer_id,))
+    recent_orders = cursor.fetchall()
+    
+    # Total orders
+    cursor.execute("SELECT COUNT(*) as total FROM orders WHERE customer_id = %s", (customer_id,))
+    order_count = cursor.fetchone()['total']
+    
+    # Available approved products
+    cursor.execute("SELECT COUNT(*) as total FROM products WHERE is_approved = 1 AND stock_quantity > 0")
+    available_products = cursor.fetchone()['total']
+    
+    # Upcoming bookings
+    cursor.execute("""
+        SELECT sb.*, ss.name as station_name 
+        FROM service_bookings sb
+        JOIN service_stations ss ON sb.station_id = ss.id
+        WHERE sb.customer_id = %s AND sb.booking_date >= CURDATE()
+        ORDER BY sb.booking_date ASC
+        LIMIT 3
+    """, (customer_id,))
+    upcoming_bookings = cursor.fetchall()
+    
+    cursor.close()
+    conn.close()
+    
+    return render_template('customer/dashboard.html',
+                         vehicle_count=vehicle_count,
+                         vehicles=vehicles,
+                         recent_orders=recent_orders,
+                         order_count=order_count,
+                         available_products=available_products,
+                         upcoming_bookings=upcoming_bookings)
 
 # ------------------ Vendor Dashboard ------------------
 @app.route('/vendor/dashboard')
@@ -839,6 +893,38 @@ def admin_profile():
     conn.close()
     
     return render_template('admin/profile.html', user=user)
+
+# ------------------ Customer: My Vehicles ------------------
+@app.route('/customer/vehicles')
+def customer_vehicles():
+    if 'user_id' not in session or session.get('role') != 'customer':
+        flash('Please login as a customer.', 'warning')
+        return redirect(url_for('home'))
+    return render_template('customer/register_vehicle.html')
+
+# ------------------ Customer: Search Parts ------------------
+@app.route('/customer/search')
+def customer_search_parts():
+    if 'user_id' not in session or session.get('role') != 'customer':
+        flash('Please login as a customer.', 'warning')
+        return redirect(url_for('home'))
+    return render_template('customer/search_parts.html')
+
+# ------------------ Customer: Orders ------------------
+@app.route('/customer/orders')
+def customer_orders():
+    if 'user_id' not in session or session.get('role') != 'customer':
+        flash('Please login as a customer.', 'warning')
+        return redirect(url_for('home'))
+    return render_template('customer/orders.html')
+
+# ------------------ Customer: Bookings ------------------
+@app.route('/customer/bookings')
+def customer_bookings():
+    if 'user_id' not in session or session.get('role') != 'customer':
+        flash('Please login as a customer.', 'warning')
+        return redirect(url_for('home'))
+    return render_template('customer/maintenance.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
