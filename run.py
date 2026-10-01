@@ -19,7 +19,37 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-
+def check_compatibility(compat_json, user_vehicles):
+    """
+    Returns True if the product compatibility matches any of the user's vehicles.
+    If the product has no compatibility info (universal), returns False.
+    """
+    if not compat_json or not user_vehicles:
+        return False
+    try:
+        compat = json.loads(compat_json) if isinstance(compat_json, str) else compat_json
+    except:
+        return False
+    
+    if not isinstance(compat, dict):
+        return False
+    
+    prod_make = (compat.get('make') or '').strip().lower()
+    prod_model = (compat.get('model') or '').strip().lower()
+    
+    if not prod_make and not prod_model:
+        return False
+    
+    for v in user_vehicles:
+        v_make = (v.get('make') or '').strip().lower()
+        v_model = (v.get('model') or '').strip().lower()
+        
+        make_match = (not prod_make) or (prod_make in v_make or v_make in prod_make)
+        model_match = (not prod_model) or (prod_model in v_model or v_model in prod_model)
+        
+        if make_match and model_match:
+            return True
+    return False
 # ------------------ MySQL connection helper ------------------
 def get_db_connection():
     return pymysql.connect(
@@ -895,12 +925,57 @@ def admin_profile():
     return render_template('admin/profile.html', user=user)
 
 # ------------------ Customer: My Vehicles ------------------
-@app.route('/customer/vehicles')
+@app.route('/customer/vehicles', methods=['GET', 'POST'])
 def customer_vehicles():
     if 'user_id' not in session or session.get('role') != 'customer':
         flash('Please login as a customer.', 'warning')
         return redirect(url_for('home'))
-    return render_template('customer/register_vehicle.html')
+    
+    customer_id = session['user_id']
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    if request.method == 'POST':
+        make = request.form.get('make')
+        model = request.form.get('model')
+        variant = request.form.get('variant')
+        fuel_type = request.form.get('fuel_type')
+        year = request.form.get('year')
+        reg_number = request.form.get('registration_number')
+        vin = request.form.get('vin')
+        
+        cursor.execute("""
+            INSERT INTO vehicles (user_id, make, model, variant, fuel_type, year, registration_number, vin)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
+        """, (customer_id, make, model, variant, fuel_type, year, reg_number, vin or None))
+        conn.commit()
+        flash('Vehicle registered successfully!', 'success')
+        return redirect(url_for('customer_vehicles'))
+    
+    # Get all vehicles for this user
+    cursor.execute("SELECT * FROM vehicles WHERE user_id = %s ORDER BY created_at DESC", (customer_id,))
+    vehicles = cursor.fetchall()
+    
+    cursor.close()
+    conn.close()
+    
+    return render_template('customer/register_vehicle.html', vehicles=vehicles)
+
+# ------------------ Customer: Delete Vehicle ------------------
+@app.route('/customer/vehicle/<int:vehicle_id>/delete')
+def customer_delete_vehicle(vehicle_id):
+    if 'user_id' not in session or session.get('role') != 'customer':
+        return redirect(url_for('home'))
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM vehicles WHERE id = %s AND user_id = %s", (vehicle_id, session['user_id']))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    
+    flash('Vehicle removed.', 'info')
+    return redirect(url_for('customer_vehicles'))
 
 # ------------------ Customer: Search Parts ------------------
 @app.route('/customer/search')
@@ -908,7 +983,126 @@ def customer_search_parts():
     if 'user_id' not in session or session.get('role') != 'customer':
         flash('Please login as a customer.', 'warning')
         return redirect(url_for('home'))
-    return render_template('customer/search_parts.html')
+    
+    customer_id = session['user_id']
+    search = request.args.get('q', '').strip()
+    category_filter = request.args.get('category', '')
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Get categories for the filter dropdown
+    cursor.execute("SELECT * FROM product_categories ORDER BY name")
+    categories = cursor.fetchall()
+    
+    # Get customer's vehicles for compatibility check
+    cursor.execute("SELECT make, model FROM vehicles WHERE user_id = %s", (customer_id,))
+    user_vehicles = cursor.fetchall()
+    
+    # Build the products query
+    query = """
+        SELECT p.*, 
+               pc.name as category_name,
+               u.name as vendor_name,
+               vd.business_name
+        FROM products p
+        LEFT JOIN product_categories pc ON p.category_id = pc.id
+        JOIN users u ON p.vendor_id = u.id
+        LEFT JOIN vendor_details vd ON u.id = vd.user_id
+        WHERE p.is_approved = 1 AND p.stock_quantity > 0
+    """
+    params = []
+    
+    if search:
+        query += " AND (p.name LIKE %s OR p.brand LIKE %s OR p.part_number LIKE %s)"
+        like = f"%{search}%"
+        params.extend([like, like, like])
+    
+    if category_filter:
+        query += " AND p.category_id = %s"
+        params.append(category_filter)
+    
+    query += " ORDER BY p.created_at DESC"
+    
+    cursor.execute(query, params)
+    products = cursor.fetchall()
+    
+    # Add compatibility flag to each product
+    for product in products:
+        product['is_compatible'] = check_compatibility(product.get('compatibility'), user_vehicles)
+    
+    cursor.close()
+    conn.close()
+    
+    return render_template('customer/search_parts.html',
+                         products=products,
+                         categories=categories,
+                         search=search,
+                         category_filter=category_filter,
+                         vehicle_count=len(user_vehicles))
+
+# ------------------ Customer: Product Detail ------------------
+@app.route('/customer/product/<int:product_id>')
+def customer_product_detail(product_id):
+    if 'user_id' not in session or session.get('role') != 'customer':
+        flash('Please login as a customer.', 'warning')
+        return redirect(url_for('home'))
+    
+    customer_id = session['user_id']
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute("""
+        SELECT p.*, 
+               pc.name as category_name,
+               u.name as vendor_name,
+               u.phone as vendor_phone,
+               u.email as vendor_email,
+               vd.business_name,
+               vd.city as vendor_city,
+               vd.address as vendor_address
+        FROM products p
+        LEFT JOIN product_categories pc ON p.category_id = pc.id
+        JOIN users u ON p.vendor_id = u.id
+        LEFT JOIN vendor_details vd ON u.id = vd.user_id
+        WHERE p.id = %s AND p.is_approved = 1
+    """, (product_id,))
+    product = cursor.fetchone()
+    
+    if not product:
+        cursor.close()
+        conn.close()
+        flash('Product not found or not yet approved.', 'warning')
+        return redirect(url_for('customer_search_parts'))
+    
+    # Check compatibility
+    cursor.execute("SELECT make, model FROM vehicles WHERE user_id = %s", (customer_id,))
+    user_vehicles = cursor.fetchall()
+    product['is_compatible'] = check_compatibility(product.get('compatibility'), user_vehicles)
+    
+    # Parse compatibility JSON for display
+    try:
+        compat = json.loads(product['compatibility']) if product.get('compatibility') else {}
+    except:
+        compat = {}
+    
+    # Related products from same category
+    cursor.execute("""
+        SELECT p.id, p.name, p.price, p.image, p.brand
+        FROM products p
+        WHERE p.category_id = %s AND p.id != %s AND p.is_approved = 1 AND p.stock_quantity > 0
+        LIMIT 4
+    """, (product['category_id'], product_id))
+    related_products = cursor.fetchall()
+    
+    cursor.close()
+    conn.close()
+    
+    return render_template('customer/product_detail.html',
+                         product=product,
+                         compat=compat,
+                         related_products=related_products,
+                         vehicle_count=len(user_vehicles))
 
 # ------------------ Customer: Orders ------------------
 @app.route('/customer/orders')
