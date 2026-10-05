@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Profile — Service Center</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root{--ink:#0f1e17; --ink-soft:#4c5f56; --ink-faint:#8a9992; --green-700:#146c43; --green-900:#0d3b2c; --green-050:#eefbf1; --line:#d9e9dd; --line-strong:#b8d4c0; --glass-bg:rgba(255,255,255,0.5); --glass-border:rgba(255,255,255,0.8); --glass-shadow:0 8px 32px -8px rgba(13,59,44,0.2);}
+        *{box-sizing:border-box; margin:0; padding:0;}
+        body{font-family:'Inter',sans-serif; color:var(--ink); min-height:100vh;}
+        h1,h2,h3{font-family:'Space Grotesk',sans-serif;}
+        .wrap{max-width:800px; margin:0 auto; padding:0 32px;}
+        a{color:inherit; text-decoration:none;}
+        body::before{content:""; position:fixed; inset:0; z-index:-3; background: radial-gradient(ellipse 55% 45% at 6% -8%, rgba(34,197,94,0.30) 0%, transparent 62%), linear-gradient(180deg, #eefaf1 0%, #e2f4ea 45%, #edf8f0 100%);}
+        .topbar{background:var(--glass-bg); backdrop-filter:blur(18px); border-bottom:1px solid var(--glass-border); padding:14px 0;}
+        .brandmark{display:flex; align-items:center; gap:10px; font-family:'Space Grotesk',sans-serif; font-weight:700;}
+        .page-head{padding:34px 0 20px;}
+        .eyebrow{display:inline-flex; align-items:center; gap:8px; font-family:'IBM Plex Mono',monospace; font-size:11.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--green-700); padding:6px 12px; border:1px dashed var(--line-strong); background:var(--green-050);}
+        .eyebrow::before{content:""; width:6px; height:6px; background:var(--green-700); border-radius:50%;}
+        .page-head h1{font-size:28px; margin-top:10px;}
+        .card{padding:28px; border-radius:16px; background:var(--glass-bg); backdrop-filter:blur(18px); border:1px solid var(--glass-border); box-shadow:var(--glass-shadow); margin-bottom:20px;}
+        .card h3{font-size:16px; margin-bottom:18px;}
+        .field{margin-bottom:14px;}
+        .field label{display:block; font-size:13px; font-weight:600; margin-bottom:6px;}
+        .field input,.field textarea{width:100%; padding:11px 14px; border:1.5px solid var(--line-strong); border-radius:10px; font-family:inherit; font-size:14px; background:rgba(255,255,255,0.7);}
+        .field input:focus,.field textarea:focus{outline:none; border-color:var(--green-700); background:#fff;}
+        .field-row{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+        .badge{display:inline-block; padding:4px 12px; border-radius:20px; font-size:11px; font-weight:700; text-transform:uppercase;}
+        .badge-ok{background:#d5f5e3; color:#27ae60;}
+        .badge-pending{background:#fef9e7; color:#e67e22;}
+        .btn{font-family:'Inter',sans-serif; font-weight:600; font-size:14px; cursor:pointer; border:none; padding:12px 22px; border-radius:10px; background:var(--green-700); color:#fff;}
+        .btn:hover{background:var(--green-900);}
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <div class="wrap" style="display:flex; align-items:center; justify-content:space-between;">
+        <div class="brandmark">🔧 PartMatch — Service Center</div>
+        <a href="{{ url_for('service_center_dashboard') }}" style="font-size:13px; color:var(--green-700); font-weight:600;">← Back to Dashboard</a>
+    </div>
+</div>
+
+<div class="wrap">
+    <div class="page-head">
+        <span class="eyebrow">Profile</span>
+        <h1>{{ user.center_name }}</h1>
+        <p style="margin-top:8px;">
+            <span class="badge {% if user.is_approved %}badge-ok{% else %}badge-pending{% endif %}">
+                {% if user.is_approved %}✓ Approved{% else %}⏳ Pending{% endif %}
+            </span>
+        </p>
+    </div>
+
+    <div class="card">
+        <h3>✏️ Edit Profile</h3>
+        <form method="POST">
+            <div class="field-row">
+                <div class="field">
+                    <label>Owner Name</label>
+                    <input type="text" name="name" value="{{ user.name }}" required>
+                </div>
+                <div class="field">
+                    <label>Phone</label>
+                    <input type="tel" name="phone" value="{{ user.phone or '' }}">
+                </div>
+            </div>
+            <div class="field">
+                <label>Service Center Name</label>
+                <input type="text" name="center_name" value="{{ user.center_name or '' }}" required>
+            </div>
+            <div class="field-row">
+                <div class="field">
+                    <label>City</label>
+                    <input type="text" name="city" value="{{ user.city or '' }}">
+                </div>
+                <div class="field">
+                    <label>Pincode</label>
+                    <input type="text" name="pincode" value="{{ user.pincode or '' }}">
+                </div>
+            </div>
+            <div class="field">
+                <label>Address</label>
+                <textarea name="address" rows="2">{{ user.address or '' }}</textarea>
+            </div>
+            <div class="field">
+                <label>Specialization</label>
+                <input type="text" name="specialization" value="{{ user.specialization or '' }}">
+            </div>
+            <div class="field-row">
+                <div class="field">
+                    <label>Opening Time</label>
+                    <input type="time" name="open_time" value="{{ user.open_time or '09:00' }}">
+                </div>
+                <div class="field">
+                    <label>Closing Time</label>
+                    <input type="time" name="close_time" value="{{ user.close_time or '19:00' }}">
+                </div>
+            </div>
+            <button type="submit" class="btn">💾 Save Changes</button>
+        </form>
+    </div>
+</div>
+
+</body>
+</html>

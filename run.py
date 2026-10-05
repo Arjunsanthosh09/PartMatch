@@ -5,6 +5,31 @@ from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
 import json
 import os
+import razorpay
+from dotenv import load_dotenv
+
+# Load environment variables from .env
+load_dotenv()
+
+app = Flask(__name__,
+            template_folder="app/templates",
+            static_folder="app/static")
+
+# Flask session secret
+app.secret_key = os.getenv('SECRET_KEY', 'your-secret-key-change-me')
+
+# Razorpay configuration
+RAZORPAY_KEY_ID = os.getenv('RAZORPAY_KEY_ID')
+RAZORPAY_KEY_SECRET = os.getenv('RAZORPAY_KEY_SECRET')
+
+# Razorpay client (initialize once)
+razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
+
+# File upload config
+UPLOAD_FOLDER = 'app/static/uploads/products'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 app = Flask(__name__,
             template_folder="app/templates",
@@ -349,12 +374,183 @@ def vendor_dashboard():
                          recent_orders=recent_orders)
 
 # ------------------ Service Center Dashboard ------------------
+# ------------------ Service Center Dashboard ------------------
 @app.route('/service_center/dashboard')
 def service_center_dashboard():
     if 'user_id' not in session or session.get('role') != 'service_center':
         flash('Please login as a service center.', 'warning')
         return redirect(url_for('home'))
-    return render_template('service_center/dashboard.html')   # You'll need to create this template
+    
+    center_id = session['user_id']
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT * FROM service_center_details WHERE user_id = %s", (center_id,))
+    center = cursor.fetchone()
+    
+    # Stats
+    cursor.execute("SELECT COUNT(*) as total FROM service_bookings WHERE station_id = %s", (center_id,))
+    total_bookings = cursor.fetchone()['total']
+    
+    cursor.execute("SELECT COUNT(*) as total FROM service_bookings WHERE station_id = %s AND status = 'booked'", (center_id,))
+    pending_bookings = cursor.fetchone()['total']
+    
+    cursor.execute("SELECT COUNT(*) as total FROM service_bookings WHERE station_id = %s AND status = 'in_progress'", (center_id,))
+    in_progress = cursor.fetchone()['total']
+    
+    cursor.execute("SELECT COUNT(*) as total FROM service_bookings WHERE station_id = %s AND status = 'completed'", (center_id,))
+    completed = cursor.fetchone()['total']
+    
+    # All bookings
+    cursor.execute("""
+        SELECT sb.*, u.name as customer_name, u.phone as customer_phone,
+               v.make, v.model, v.registration_number, v.year as vehicle_year, v.fuel_type
+        FROM service_bookings sb
+        JOIN users u ON sb.customer_id = u.id
+        JOIN vehicles v ON sb.vehicle_id = v.id
+        WHERE sb.station_id = %s
+        ORDER BY 
+            CASE sb.status 
+                WHEN 'booked' THEN 1 
+                WHEN 'in_progress' THEN 2 
+                WHEN 'completed' THEN 3
+                ELSE 4
+            END,
+            sb.booking_date ASC
+    """, (center_id,))
+    bookings = cursor.fetchall()
+    
+    cursor.close()
+    conn.close()
+    
+    return render_template('service_center/dashboard.html',
+                         center=center,
+                         total_bookings=total_bookings,
+                         pending_bookings=pending_bookings,
+                         in_progress=in_progress,
+                         completed=completed,
+                         bookings=bookings)
+
+
+# ------------------ Service Center: Booking Action ------------------
+@app.route('/service_center/booking/<int:booking_id>/<action>')
+def service_center_booking_action(booking_id, action):
+    if 'user_id' not in session or session.get('role') != 'service_center':
+        return redirect(url_for('home'))
+    
+    center_id = session['user_id']
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT * FROM service_bookings WHERE id = %s AND station_id = %s", (booking_id, center_id))
+    booking = cursor.fetchone()
+    
+    if not booking:
+        cursor.close()
+        conn.close()
+        flash('Booking not found.', 'danger')
+        return redirect(url_for('service_center_dashboard'))
+    
+    if action == 'start':
+        cursor.execute("UPDATE service_bookings SET status = 'in_progress' WHERE id = %s", (booking_id,))
+        flash('Booking marked as in progress.', 'success')
+    elif action == 'complete':
+        cursor.execute("UPDATE service_bookings SET status = 'completed' WHERE id = %s", (booking_id,))
+        flash('Booking completed!', 'success')
+    elif action == 'cancel':
+        cursor.execute("UPDATE service_bookings SET status = 'cancelled' WHERE id = %s", (booking_id,))
+        flash('Booking cancelled.', 'info')
+    
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return redirect(url_for('service_center_dashboard'))
+
+
+# ------------------ Service Center: Add Maintenance Record ------------------
+@app.route('/service_center/booking/<int:booking_id>/add-maintenance', methods=['POST'])
+def service_center_add_maintenance(booking_id):
+    if 'user_id' not in session or session.get('role') != 'service_center':
+        return redirect(url_for('home'))
+    
+    center_id = session['user_id']
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT * FROM service_bookings WHERE id = %s AND station_id = %s", (booking_id, center_id))
+    booking = cursor.fetchone()
+    
+    if not booking:
+        cursor.close()
+        conn.close()
+        flash('Booking not found.', 'danger')
+        return redirect(url_for('service_center_dashboard'))
+    
+    service_type = request.form.get('service_type')
+    description = request.form.get('description')
+    mileage = request.form.get('mileage_km') or None
+    cost = request.form.get('cost') or None
+    next_due_date = request.form.get('next_due_date') or None
+    next_due_mileage = request.form.get('next_due_mileage_km') or None
+    
+    cursor.execute("""
+        INSERT INTO maintenance_records 
+        (vehicle_id, service_type, description, mileage_km, next_due_mileage_km, next_due_date, performed_by_station_id, cost)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+    """, (booking['vehicle_id'], service_type, description, mileage, next_due_mileage, next_due_date, center_id, cost))
+    
+    cursor.execute("UPDATE service_bookings SET status = 'completed' WHERE id = %s", (booking_id,))
+    
+    conn.commit()
+    cursor.close()
+    conn.close()
+    
+    flash('Maintenance record added and booking completed!', 'success')
+    return redirect(url_for('service_center_dashboard'))
+
+
+# ------------------ Service Center Profile ------------------
+@app.route('/service_center/profile', methods=['GET', 'POST'])
+def service_center_profile():
+    if 'user_id' not in session or session.get('role') != 'service_center':
+        return redirect(url_for('home'))
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    if request.method == 'POST':
+        name = request.form.get('name')
+        phone = request.form.get('phone')
+        center_name = request.form.get('center_name')
+        address = request.form.get('address')
+        city = request.form.get('city')
+        pincode = request.form.get('pincode')
+        specialization = request.form.get('specialization')
+        open_time = request.form.get('open_time')
+        close_time = request.form.get('close_time')
+        
+        cursor.execute("UPDATE users SET name=%s, phone=%s WHERE id=%s", (name, phone, session['user_id']))
+        cursor.execute("""
+            UPDATE service_center_details 
+            SET center_name=%s, address=%s, city=%s, pincode=%s, specialization=%s, open_time=%s, close_time=%s 
+            WHERE user_id=%s
+        """, (center_name, address, city, pincode, specialization, open_time, close_time, session['user_id']))
+        conn.commit()
+        flash('Profile updated!', 'success')
+        return redirect(url_for('service_center_profile'))
+    
+    cursor.execute("""
+        SELECT u.*, sc.center_name, sc.address, sc.city, sc.pincode, sc.specialization,
+               sc.open_time, sc.close_time, sc.is_approved
+        FROM users u
+        JOIN service_center_details sc ON u.id = sc.user_id
+        WHERE u.id = %s
+    """, (session['user_id'],))
+    user = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    
+    return render_template('service_center/profile.html', user=user)
 
 
 # ==================== ADMIN DASHBOARD ====================
@@ -528,6 +724,7 @@ def admin_vendor_action(vendor_id, action):
     return redirect(url_for('admin_vendors'))
 
 # ==================== MANAGE SERVICE CENTERS ====================
+# ==================== MANAGE SERVICE CENTERS ====================
 @app.route('/admin/service-centers')
 def admin_service_centers():
     if 'user_id' not in session or session.get('role') != 'admin':
@@ -537,7 +734,9 @@ def admin_service_centers():
     cursor = conn.cursor()
     cursor.execute("""
         SELECT u.id, u.name, u.email, u.phone, u.created_at,
-               sc.center_name, sc.city, sc.is_approved
+               sc.center_name, sc.center_name as business_name,
+               sc.registration_number as gst_number,
+               sc.city, sc.specialization, sc.is_approved
         FROM users u
         JOIN service_center_details sc ON u.id = sc.user_id
         WHERE u.role = 'service_center'
@@ -547,11 +746,12 @@ def admin_service_centers():
     cursor.close()
     conn.close()
     
-    return render_template('admin/manage_service_centers.html', centers=centers)
+    return render_template('admin/manage_service_centers.html', service_centers=centers)
 
 # ==================== APPROVE/REJECT SERVICE CENTER ====================
-@app.route('/admin/service-center/<int:center_id>/<action>')
-def admin_center_action(center_id, action):
+# ==================== APPROVE/REJECT SERVICE CENTER ====================
+@app.route('/admin/service-center/<int:service_center_id>/<action>')
+def admin_service_center_action(service_center_id, action):
     if 'user_id' not in session or session.get('role') != 'admin':
         return redirect(url_for('home'))
     
@@ -559,13 +759,13 @@ def admin_center_action(center_id, action):
     cursor = conn.cursor()
     
     if action == 'approve':
-        cursor.execute("UPDATE service_center_details SET is_approved = 1 WHERE user_id = %s", (center_id,))
-        cursor.execute("UPDATE users SET is_verified = 1 WHERE id = %s AND role = 'service_center'", (center_id,))
+        cursor.execute("UPDATE service_center_details SET is_approved = 1 WHERE user_id = %s", (service_center_id,))
+        cursor.execute("UPDATE users SET is_verified = 1 WHERE id = %s AND role = 'service_center'", (service_center_id,))
         flash('Service center approved successfully!', 'success')
     elif action == 'reject':
-        cursor.execute("DELETE FROM service_center_details WHERE user_id = %s", (center_id,))
-        cursor.execute("DELETE FROM users WHERE id = %s AND role = 'service_center'", (center_id,))
-        flash('Service center rejected and removed.', 'danger')
+        cursor.execute("DELETE FROM service_center_details WHERE user_id = %s", (service_center_id,))
+        cursor.execute("DELETE FROM users WHERE id = %s AND role = 'service_center'", (service_center_id,))
+        flash('Service center removed.', 'danger')
     
     conn.commit()
     cursor.close()
@@ -1104,21 +1304,439 @@ def customer_product_detail(product_id):
                          related_products=related_products,
                          vehicle_count=len(user_vehicles))
 
+
+# ------------------ Customer: Bookings ------------------
+# ------------------ Customer: Bookings ------------------
+@app.route('/customer/bookings', methods=['GET', 'POST'])
+def customer_bookings():
+    if 'user_id' not in session or session.get('role') != 'customer':
+        flash('Please login as a customer.', 'warning')
+        return redirect(url_for('home'))
+    
+    customer_id = session['user_id']
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    if request.method == 'POST':
+        station_id = request.form.get('station_id')
+        vehicle_id = request.form.get('vehicle_id')
+        booking_date = request.form.get('booking_date')
+        time_slot = request.form.get('time_slot')
+        service_type = request.form.get('service_type')
+        notes = request.form.get('notes')
+        
+        if not station_id or not vehicle_id or not booking_date or not time_slot:
+            flash('Please fill all required fields.', 'danger')
+            return redirect(url_for('customer_bookings'))
+        
+        cursor.execute("""
+            INSERT INTO service_bookings (customer_id, vehicle_id, station_id, booking_date, time_slot, service_type, status, notes)
+            VALUES (%s, %s, %s, %s, %s, %s, 'booked', %s)
+        """, (customer_id, vehicle_id, station_id, booking_date, time_slot, service_type, notes))
+        conn.commit()
+        flash('Service appointment booked successfully!', 'success')
+        return redirect(url_for('customer_bookings'))
+    
+    # Get approved service centers
+    cursor.execute("""
+        SELECT sc.user_id as id, sc.center_name, sc.address, sc.city, sc.specialization,
+               sc.open_time, sc.close_time, u.phone, u.email
+        FROM service_center_details sc
+        JOIN users u ON sc.user_id = u.id
+        WHERE sc.is_approved = 1
+        ORDER BY sc.center_name
+    """)
+    service_centers = cursor.fetchall()
+    
+    # Get customer's vehicles
+    cursor.execute("SELECT * FROM vehicles WHERE user_id = %s", (customer_id,))
+    vehicles = cursor.fetchall()
+    
+    # Get customer's bookings
+    cursor.execute("""
+        SELECT sb.*, sc.center_name, sc.city,
+               v.make, v.model, v.registration_number
+        FROM service_bookings sb
+        JOIN service_center_details sc ON sb.station_id = sc.user_id
+        JOIN vehicles v ON sb.vehicle_id = v.id
+        WHERE sb.customer_id = %s
+        ORDER BY sb.booking_date DESC, sb.id DESC
+    """, (customer_id,))
+    bookings = cursor.fetchall()
+    
+    cursor.close()
+    conn.close()
+    
+    return render_template('customer/bookings.html',
+                         service_centers=service_centers,
+                         vehicles=vehicles,
+                         bookings=bookings)
+
+# ==================== CUSTOMER: CART ====================
+
+@app.before_request
+def ensure_cart_exists():
+    """Ensure a cart exists in the session"""
+    if 'user_id' in session and session.get('role') == 'customer':
+        if 'cart' not in session:
+            session['cart'] = []
+
+
+@app.route('/customer/cart')
+def customer_cart():
+    """View cart page"""
+    if 'user_id' not in session or session.get('role') != 'customer':
+        flash('Please login as a customer.', 'warning')
+        return redirect(url_for('home'))
+    
+    cart = session.get('cart', [])
+    cart_items = []
+    subtotal = 0
+    
+    if cart:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        for item in cart:
+            cursor.execute("""
+                SELECT p.*, u.name as vendor_name, vd.business_name
+                FROM products p
+                JOIN users u ON p.vendor_id = u.id
+                LEFT JOIN vendor_details vd ON u.id = vd.user_id
+                WHERE p.id = %s AND p.is_approved = 1
+            """, (item['product_id'],))
+            product = cursor.fetchone()
+            
+            if product:
+                item_total = float(product['price']) * item['quantity']
+                subtotal += item_total
+                cart_items.append({
+                    'product': product,
+                    'quantity': item['quantity'],
+                    'item_total': item_total
+                })
+        
+        cursor.close()
+        conn.close()
+    
+    return render_template('customer/cart.html',
+                         cart_items=cart_items,
+                         subtotal=subtotal)
+
+
+@app.route('/customer/add-to-cart/<int:product_id>', methods=['POST'])
+def customer_add_to_cart(product_id):
+    """Add product to cart"""
+    if 'user_id' not in session or session.get('role') != 'customer':
+        flash('Please login as a customer.', 'warning')
+        return redirect(url_for('home'))
+    
+    quantity = int(request.form.get('quantity', 1))
+    
+    # Verify product exists and is approved
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, stock_quantity FROM products WHERE id = %s AND is_approved = 1", (product_id,))
+    product = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    
+    if not product:
+        flash('Product not found.', 'danger')
+        return redirect(url_for('customer_search_parts'))
+    
+    if product['stock_quantity'] < quantity:
+        flash('Not enough stock available.', 'warning')
+        return redirect(url_for('customer_product_detail', product_id=product_id))
+    
+    cart = session.get('cart', [])
+    product_exists = False
+    
+    for item in cart:
+        if item['product_id'] == product_id:
+            item['quantity'] += quantity
+            product_exists = True
+            break
+    
+    if not product_exists:
+        cart.append({'product_id': product_id, 'quantity': quantity})
+    
+    session['cart'] = cart
+    session.modified = True
+    
+    flash('Item added to cart!', 'success')
+    return redirect(url_for('customer_cart'))
+
+
+@app.route('/customer/cart/update/<int:product_id>', methods=['POST'])
+def customer_cart_update(product_id):
+    """Update quantity in cart"""
+    if 'user_id' not in session or session.get('role') != 'customer':
+        return redirect(url_for('home'))
+    
+    new_qty = int(request.form.get('quantity', 1))
+    cart = session.get('cart', [])
+    
+    if new_qty <= 0:
+        cart = [item for item in cart if item['product_id'] != product_id]
+    else:
+        for item in cart:
+            if item['product_id'] == product_id:
+                item['quantity'] = new_qty
+                break
+    
+    session['cart'] = cart
+    session.modified = True
+    flash('Cart updated.', 'success')
+    return redirect(url_for('customer_cart'))
+
+
+@app.route('/customer/cart/remove/<int:product_id>')
+def customer_cart_remove(product_id):
+    """Remove item from cart"""
+    if 'user_id' not in session or session.get('role') != 'customer':
+        return redirect(url_for('home'))
+    
+    cart = session.get('cart', [])
+    cart = [item for item in cart if item['product_id'] != product_id]
+    session['cart'] = cart
+    session.modified = True
+    
+    flash('Item removed from cart.', 'info')
+    return redirect(url_for('customer_cart'))
+
+
+# ==================== CUSTOMER: CHECKOUT ====================
+
+@app.route('/customer/checkout', methods=['GET'])
+def customer_checkout():
+    """Checkout page - shows cart and creates Razorpay order"""
+    if 'user_id' not in session or session.get('role') != 'customer':
+        flash('Please login as a customer.', 'warning')
+        return redirect(url_for('home'))
+    
+    cart = session.get('cart', [])
+    if not cart:
+        flash('Your cart is empty.', 'warning')
+        return redirect(url_for('customer_cart'))
+    
+    customer_id = session['user_id']
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Load cart items from DB
+    cart_items = []
+    subtotal = 0
+    for item in cart:
+        cursor.execute("""
+            SELECT p.*, u.name as vendor_name, vd.business_name
+            FROM products p
+            JOIN users u ON p.vendor_id = u.id
+            LEFT JOIN vendor_details vd ON u.id = vd.user_id
+            WHERE p.id = %s AND p.is_approved = 1
+        """, (item['product_id'],))
+        product = cursor.fetchone()
+        if product:
+            item_total = float(product['price']) * item['quantity']
+            subtotal += item_total
+            cart_items.append({
+                'product': product,
+                'quantity': item['quantity'],
+                'item_total': item_total
+            })
+    
+    cursor.execute("SELECT name, phone FROM users WHERE id = %s", (customer_id,))
+    customer = cursor.fetchone()
+    
+    cursor.close()
+    conn.close()
+    
+    # Create Razorpay order
+    amount_in_paise = int(subtotal * 100)   # Razorpay uses paise
+    razorpay_order = razorpay_client.order.create({
+        'amount': amount_in_paise,
+        'currency': 'INR',
+        'receipt': f'order_rcptid_{customer_id}_{int(datetime.now().timestamp())}',
+        'notes': {
+            'customer_id': customer_id,
+            'customer_name': customer['name']
+        }
+    })
+    
+    return render_template('customer/checkout.html',
+                         cart_items=cart_items,
+                         subtotal=subtotal,
+                         customer=customer,
+                         razorpay_order_id=razorpay_order['id'],
+                         razorpay_key_id=RAZORPAY_KEY_ID,
+                         amount_in_paise=amount_in_paise)
+    
+
+@app.route('/customer/verify-payment', methods=['POST'])
+def customer_verify_payment():
+    """Verify Razorpay signature and save the order"""
+    if 'user_id' not in session or session.get('role') != 'customer':
+        flash('Please login as a customer.', 'warning')
+        return redirect(url_for('home'))
+    
+    # Get payment details from Razorpay response
+    payment_id = request.form.get('razorpay_payment_id')
+    order_id = request.form.get('razorpay_order_id')
+    signature = request.form.get('razorpay_signature')
+    shipping_address = request.form.get('shipping_address')
+    
+    customer_id = session['user_id']
+    cart = session.get('cart', [])
+    
+    if not cart:
+        flash('Cart is empty.', 'warning')
+        return redirect(url_for('customer_cart'))
+    
+    try:
+        # Verify the payment signature
+        razorpay_client.utility.verify_payment_signature({
+            'razorpay_order_id': order_id,
+            'razorpay_payment_id': payment_id,
+            'razorpay_signature': signature
+        })
+    except razorpay.errors.SignatureVerificationError:
+        flash('Payment verification failed. Please try again.', 'danger')
+        return redirect(url_for('customer_cart'))
+    
+    # Payment verified — save order to DB
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cart_items = []
+    subtotal = 0
+    for item in cart:
+        cursor.execute("""
+            SELECT p.* FROM products p
+            WHERE p.id = %s AND p.is_approved = 1
+        """, (item['product_id'],))
+        product = cursor.fetchone()
+        if product:
+            subtotal += float(product['price']) * item['quantity']
+            cart_items.append({'product': product, 'quantity': item['quantity']})
+    
+    try:
+        # Create order
+        cursor.execute("""
+            INSERT INTO orders (customer_id, order_status, total_amount, shipping_address)
+            VALUES (%s, %s, %s, %s)
+        """, (customer_id, 'confirmed', subtotal, shipping_address))
+        new_order_id = cursor.lastrowid
+        
+        # Insert order items + reduce stock
+        for item in cart_items:
+            cursor.execute("""
+                INSERT INTO order_items (order_id, product_id, quantity, price_per_unit)
+                VALUES (%s, %s, %s, %s)
+            """, (new_order_id, item['product']['id'], item['quantity'], item['product']['price']))
+            
+            cursor.execute("""
+                UPDATE products SET stock_quantity = stock_quantity - %s
+                WHERE id = %s
+            """, (item['quantity'], item['product']['id']))
+        
+        conn.commit()
+        
+        # Clear cart
+        session['cart'] = []
+        session.modified = True
+        
+        cursor.close()
+        conn.close()
+        
+        flash(f'Payment successful! Order #{new_order_id} placed.', 'success')
+        return redirect(url_for('customer_orders'))
+    
+    except Exception as e:
+        conn.rollback()
+        cursor.close()
+        conn.close()
+        flash(f'Error saving order: {str(e)}', 'danger')
+        return redirect(url_for('customer_checkout'))
+
 # ------------------ Customer: Orders ------------------
 @app.route('/customer/orders')
 def customer_orders():
     if 'user_id' not in session or session.get('role') != 'customer':
         flash('Please login as a customer.', 'warning')
         return redirect(url_for('home'))
-    return render_template('customer/orders.html')
+    
+    customer_id = session['user_id']
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute("""
+        SELECT o.*, 
+               (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as item_count
+        FROM orders o
+        WHERE o.customer_id = %s
+        ORDER BY o.created_at DESC
+    """, (customer_id,))
+    orders = cursor.fetchall()
+    
+    # Get items for each order
+    for order in orders:
+        cursor.execute("""
+            SELECT oi.*, p.name as product_name, p.image, p.brand
+            FROM order_items oi
+            JOIN products p ON oi.product_id = p.id
+            WHERE oi.order_id = %s
+        """, (order['id'],))
+        order['order_items'] = cursor.fetchall()
+    
+    cursor.close()
+    conn.close()
+    
+    return render_template('customer/orders.html', orders=orders)
 
-# ------------------ Customer: Bookings ------------------
-@app.route('/customer/bookings')
-def customer_bookings():
+# ------------------ Customer: Download Invoice ------------------
+@app.route('/customer/order/<int:order_id>/invoice')
+def customer_invoice(order_id):
     if 'user_id' not in session or session.get('role') != 'customer':
         flash('Please login as a customer.', 'warning')
         return redirect(url_for('home'))
-    return render_template('customer/maintenance.html')
-
+    
+    customer_id = session['user_id']
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Load order (only if belongs to this customer)
+    cursor.execute("""
+        SELECT o.*, u.name as customer_name, u.email as customer_email, u.phone as customer_phone
+        FROM orders o
+        JOIN users u ON o.customer_id = u.id
+        WHERE o.id = %s AND o.customer_id = %s
+    """, (order_id, customer_id))
+    order = cursor.fetchone()
+    
+    if not order:
+        cursor.close()
+        conn.close()
+        flash('Order not found.', 'danger')
+        return redirect(url_for('customer_orders'))
+    
+    # Load order items
+    cursor.execute("""
+        SELECT oi.*, p.name as product_name, p.brand, p.part_number,
+               u.name as vendor_name, vd.business_name
+        FROM order_items oi
+        JOIN products p ON oi.product_id = p.id
+        JOIN users u ON p.vendor_id = u.id
+        LEFT JOIN vendor_details vd ON u.id = vd.user_id
+        WHERE oi.order_id = %s
+    """, (order_id,))
+    items = cursor.fetchall()
+    
+    cursor.close()
+    conn.close()
+    
+    return render_template('customer/invoice.html',
+                         order=order,
+                         items=items)
 if __name__ == '__main__':
     app.run(debug=True)
+    

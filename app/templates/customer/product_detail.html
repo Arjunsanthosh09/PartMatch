@@ -1,295 +1,798 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{{ product.name }} — PartMatch</title>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
     <style>
-        :root{
-          --ink:#0f1e17; --ink-soft:#4c5f56; --ink-faint:#8a9992;
-          --green-900:#0d3b2c; --green-700:#146c43; --green-600:#178a4c;
-          --green-500:#1fa85a; --green-100:#dcf5e3; --green-050:#eefbf1;
-          --line:#d9e9dd; --line-strong:#b8d4c0; --red:#e74c3c;
-          --glass-bg:rgba(255,255,255,0.5);
-          --glass-bg-strong:rgba(255,255,255,0.72);
-          --glass-border:rgba(255,255,255,0.8);
-          --glass-shadow:0 8px 32px -8px rgba(13,59,44,0.2);
+      :root {
+        --ink: #0f1e17;
+        --ink-soft: #4c5f56;
+        --ink-faint: #8a9992;
+        --green-900: #0d3b2c;
+        --green-700: #146c43;
+        --green-600: #178a4c;
+        --green-500: #1fa85a;
+        --green-100: #dcf5e3;
+        --green-050: #eefbf1;
+        --line: #d9e9dd;
+        --line-strong: #b8d4c0;
+        --red: #e74c3c;
+        --glass-bg: rgba(255, 255, 255, 0.5);
+        --glass-bg-strong: rgba(255, 255, 255, 0.72);
+        --glass-border: rgba(255, 255, 255, 0.8);
+        --glass-shadow: 0 8px 32px -8px rgba(13, 59, 44, 0.2);
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: "Inter", sans-serif;
+        color: var(--ink);
+        min-height: 100vh;
+        position: relative;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        font-family: "Space Grotesk", sans-serif;
+      }
+      .wrap {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 0 32px;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: -3;
+        background:
+          radial-gradient(
+            ellipse 55% 45% at 6% -8%,
+            rgba(34, 197, 94, 0.3) 0%,
+            transparent 62%
+          ),
+          radial-gradient(
+            ellipse 55% 50% at 102% -4%,
+            rgba(45, 212, 191, 0.26) 0%,
+            transparent 58%
+          ),
+          linear-gradient(180deg, #eefaf1 0%, #e2f4ea 45%, #edf8f0 100%);
+      }
+      .blob {
+        position: fixed;
+        z-index: -1;
+        border-radius: 50%;
+        filter: blur(64px);
+        opacity: 0.75;
+        pointer-events: none;
+        animation: blobFloat 14s ease-in-out infinite;
+      }
+      .blob-a {
+        width: 460px;
+        height: 460px;
+        background: radial-gradient(circle, #7fe0a3, transparent 70%);
+        top: -140px;
+        right: -100px;
+      }
+      .blob-b {
+        width: 380px;
+        height: 380px;
+        background: radial-gradient(circle, #6fe3d6, transparent 70%);
+        bottom: 6%;
+        left: -120px;
+        animation-delay: 3s;
+      }
+      @keyframes blobFloat {
+        0%,
+        100% {
+          transform: translate(0, 0) scale(1);
         }
-        *{box-sizing:border-box; margin:0; padding:0;}
-        body{font-family:'Inter',sans-serif; color:var(--ink); min-height:100vh; position:relative;}
-        h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif;}
-        .wrap{max-width:1280px; margin:0 auto; padding:0 32px;}
-        a{color:inherit; text-decoration:none;}
-
-        body::before{
-          content:""; position:fixed; inset:0; z-index:-3;
-          background:
-            radial-gradient(ellipse 55% 45% at 6% -8%, rgba(34,197,94,0.30) 0%, transparent 62%),
-            radial-gradient(ellipse 55% 50% at 102% -4%, rgba(45,212,191,0.26) 0%, transparent 58%),
-            linear-gradient(180deg, #eefaf1 0%, #e2f4ea 45%, #edf8f0 100%);
+        50% {
+          transform: translate(24px, -22px) scale(1.06);
         }
-        .blob{position:fixed; z-index:-1; border-radius:50%; filter:blur(64px); opacity:.75; pointer-events:none; animation:blobFloat 14s ease-in-out infinite;}
-        .blob-a{width:460px; height:460px; background:radial-gradient(circle,#7fe0a3,transparent 70%); top:-140px; right:-100px;}
-        .blob-b{width:380px; height:380px; background:radial-gradient(circle,#6fe3d6,transparent 70%); bottom:6%; left:-120px; animation-delay:3s;}
-        @keyframes blobFloat{0%,100%{transform:translate(0,0) scale(1);} 50%{transform:translate(24px,-22px) scale(1.06);}}
+      }
 
-        @keyframes fadeUp{from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:translateY(0);}}
-        .anim{animation:fadeUp .6s cubic-bezier(.22,.61,.36,1) both;}
-
-        /* TOPBAR */
-        .topbar{position:sticky; top:0; z-index:100; background:var(--glass-bg-strong); backdrop-filter:blur(18px) saturate(1.7); border-bottom:1px solid var(--glass-border); box-shadow:0 4px 24px -12px rgba(13,59,44,0.12);}
-        .topbar-row{display:flex; align-items:center; gap:6px; padding:14px 0; overflow-x:auto; scrollbar-width:none;}
-        .topbar-row::-webkit-scrollbar{display:none;}
-        .brandmark{display:flex; align-items:center; gap:10px; margin-right:18px; flex-shrink:0;}
-        .brandmark strong{font-family:'Space Grotesk',sans-serif; font-size:17px; font-weight:700;}
-        .brandmark small{display:block; font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-faint);}
-        .navlink{display:flex; align-items:center; gap:7px; padding:9px 14px; font-size:13.5px; font-weight:600; color:var(--ink-soft); border:1px solid transparent; border-radius:8px; white-space:nowrap; transition:all .25s ease; flex-shrink:0;}
-        .navlink:hover{background:var(--green-050); color:var(--green-700); border-color:var(--line);}
-        .navlink.active{background:var(--green-700); color:#fff; box-shadow:0 4px 14px -4px rgba(20,108,67,.5);}
-        .nav-spacer{flex:1;}
-        .navlink.logout{color:var(--red); margin-left:auto;}
-        .navlink.logout:hover{background:#fdecea; border-color:#f6c6c1;}
-
-        /* BREADCRUMB */
-        .breadcrumb{padding:24px 0 8px; font-size:13px; color:var(--ink-faint);}
-        .breadcrumb a{color:var(--green-600); font-weight:600;}
-        .breadcrumb a:hover{text-decoration:underline;}
-
-        /* PRODUCT LAYOUT */
-        .product-layout{display:grid; grid-template-columns:1fr 1fr; gap:32px; margin:20px 0 40px;}
-        @media(max-width:900px){.product-layout{grid-template-columns:1fr;}}
-
-        /* LEFT: IMAGE */
-        .product-image-wrap{
-          background:var(--glass-bg); backdrop-filter:blur(18px);
-          border:1px solid var(--glass-border); border-radius:20px; overflow:hidden;
-          box-shadow:var(--glass-shadow); position:relative; aspect-ratio:1/1;
-          display:flex; align-items:center; justify-content:center;
-          background-image:linear-gradient(135deg,#eefbf1,#dcf5e3);
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(16px);
         }
-        .product-image-wrap img{width:100%; height:100%; object-fit:cover;}
-        .product-image-wrap .placeholder{font-size:120px; opacity:.5;}
-        
-        .compat-flag{
-          position:absolute; top:16px; left:16px;
-          background:var(--green-700); color:#fff;
-          font-size:12px; font-weight:700; padding:8px 14px; border-radius:24px;
-          display:flex; align-items:center; gap:6px;
-          box-shadow:0 4px 12px -2px rgba(20,108,67,.5);
+        to {
+          opacity: 1;
+          transform: translateY(0);
         }
-        .compat-flag::before{content:"✓"; font-weight:900;}
+      }
+      .anim {
+        animation: fadeUp 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+      }
 
-        /* RIGHT: INFO */
-        .product-info{display:flex; flex-direction:column; gap:16px;}
-        .product-info h1{font-size:28px; line-height:1.2;}
-        .product-info .brand-line{font-size:13px; color:var(--ink-faint); font-family:'IBM Plex Mono',monospace;}
-        .product-info .category-pill{display:inline-block; padding:5px 12px; background:var(--green-050); border:1px solid var(--line); border-radius:20px; color:var(--green-700); font-size:12px; font-weight:600; align-self:flex-start;}
-        
-        .price-box{
-          padding:20px; border-radius:14px;
-          background:var(--glass-bg); backdrop-filter:blur(18px);
-          border:1px solid var(--glass-border);
-          display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
+      /* TOPBAR */
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: var(--glass-bg-strong);
+        backdrop-filter: blur(18px) saturate(1.7);
+        border-bottom: 1px solid var(--glass-border);
+        box-shadow: 0 4px 24px -12px rgba(13, 59, 44, 0.12);
+      }
+      .topbar-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 14px 0;
+        overflow-x: auto;
+        scrollbar-width: none;
+      }
+      .topbar-row::-webkit-scrollbar {
+        display: none;
+      }
+      .brandmark {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-right: 18px;
+        flex-shrink: 0;
+      }
+      .brandmark strong {
+        font-family: "Space Grotesk", sans-serif;
+        font-size: 17px;
+        font-weight: 700;
+      }
+      .brandmark small {
+        display: block;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 9px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--ink-faint);
+      }
+      .navlink {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 9px 14px;
+        font-size: 13.5px;
+        font-weight: 600;
+        color: var(--ink-soft);
+        border: 1px solid transparent;
+        border-radius: 8px;
+        white-space: nowrap;
+        transition: all 0.25s ease;
+        flex-shrink: 0;
+      }
+      .navlink:hover {
+        background: var(--green-050);
+        color: var(--green-700);
+        border-color: var(--line);
+      }
+      .navlink.active {
+        background: var(--green-700);
+        color: #fff;
+        box-shadow: 0 4px 14px -4px rgba(20, 108, 67, 0.5);
+      }
+      .nav-spacer {
+        flex: 1;
+      }
+      .navlink.logout {
+        color: var(--red);
+        margin-left: auto;
+      }
+      .navlink.logout:hover {
+        background: #fdecea;
+        border-color: #f6c6c1;
+      }
+
+      /* BREADCRUMB */
+      .breadcrumb {
+        padding: 24px 0 8px;
+        font-size: 13px;
+        color: var(--ink-faint);
+      }
+      .breadcrumb a {
+        color: var(--green-600);
+        font-weight: 600;
+      }
+      .breadcrumb a:hover {
+        text-decoration: underline;
+      }
+
+      /* PRODUCT LAYOUT */
+      .product-layout {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 32px;
+        margin: 20px 0 40px;
+      }
+      @media (max-width: 900px) {
+        .product-layout {
+          grid-template-columns: 1fr;
         }
-        .price{font-family:'Space Grotesk',sans-serif; font-size:36px; font-weight:700; color:var(--green-700);}
-        .stock-tag{font-size:13px; padding:6px 12px; border-radius:20px; font-weight:600;}
-        .stock-tag.in{background:#d5f5e3; color:#27ae60;}
-        .stock-tag.low{background:#fef9e7; color:#e67e22;}
-        .stock-tag.out{background:#fadbd8; color:#e74c3c;}
+      }
 
-        .action-buttons{display:flex; gap:12px; flex-wrap:wrap;}
-        .btn{font-family:'Inter',sans-serif; font-weight:600; font-size:14px; cursor:pointer; border:none; padding:14px 24px; border-radius:10px; display:inline-flex; align-items:center; justify-content:center; gap:8px; transition:all .25s ease; text-decoration:none;}
-        .btn-solid{background:var(--green-700); color:#fff; flex:1; min-width:180px;}
-        .btn-solid:hover{background:var(--green-900); transform:translateY(-1px); box-shadow:0 6px 20px -4px rgba(20,108,67,.5);}
-        .btn-ghost{background:transparent; color:var(--ink); border:1.5px solid var(--line-strong);}
-        .btn-ghost:hover{border-color:var(--green-600); color:var(--green-700);}
-        .btn:disabled{opacity:.5; cursor:not-allowed;}
+      /* LEFT: IMAGE */
+      .product-image-wrap {
+        background: var(--glass-bg);
+        backdrop-filter: blur(18px);
+        border: 1px solid var(--glass-border);
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: var(--glass-shadow);
+        position: relative;
+        aspect-ratio: 1/1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-image: linear-gradient(135deg, #eefbf1, #dcf5e3);
+      }
+      .product-image-wrap img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .product-image-wrap .placeholder {
+        font-size: 120px;
+        opacity: 0.5;
+      }
 
-        /* DETAILS SECTIONS */
-        .detail-card{
-          padding:24px; border-radius:16px;
-          background:var(--glass-bg); backdrop-filter:blur(18px);
-          border:1px solid var(--glass-border); box-shadow:var(--glass-shadow);
+      .compat-flag {
+        position: absolute;
+        top: 16px;
+        left: 16px;
+        background: var(--green-700);
+        color: #fff;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 8px 14px;
+        border-radius: 24px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        box-shadow: 0 4px 12px -2px rgba(20, 108, 67, 0.5);
+      }
+      .compat-flag::before {
+        content: "✓";
+        font-weight: 900;
+      }
+
+      /* RIGHT: INFO */
+      .product-info {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .product-info h1 {
+        font-size: 28px;
+        line-height: 1.2;
+      }
+      .product-info .brand-line {
+        font-size: 13px;
+        color: var(--ink-faint);
+        font-family: "IBM Plex Mono", monospace;
+      }
+      .product-info .category-pill {
+        display: inline-block;
+        padding: 5px 12px;
+        background: var(--green-050);
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        color: var(--green-700);
+        font-size: 12px;
+        font-weight: 600;
+        align-self: flex-start;
+      }
+
+      .price-box {
+        padding: 20px;
+        border-radius: 14px;
+        background: var(--glass-bg);
+        backdrop-filter: blur(18px);
+        border: 1px solid var(--glass-border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+      .price {
+        font-family: "Space Grotesk", sans-serif;
+        font-size: 36px;
+        font-weight: 700;
+        color: var(--green-700);
+      }
+      .stock-tag {
+        font-size: 13px;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-weight: 600;
+      }
+      .stock-tag.in {
+        background: #d5f5e3;
+        color: #27ae60;
+      }
+      .stock-tag.low {
+        background: #fef9e7;
+        color: #e67e22;
+      }
+      .stock-tag.out {
+        background: #fadbd8;
+        color: #e74c3c;
+      }
+
+      .action-buttons {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .btn {
+        font-family: "Inter", sans-serif;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        border: none;
+        padding: 14px 24px;
+        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.25s ease;
+        text-decoration: none;
+      }
+      .btn-solid {
+        background: var(--green-700);
+        color: #fff;
+        flex: 1;
+        min-width: 180px;
+      }
+      .btn-solid:hover {
+        background: var(--green-900);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px -4px rgba(20, 108, 67, 0.5);
+      }
+      .btn-ghost {
+        background: transparent;
+        color: var(--ink);
+        border: 1.5px solid var(--line-strong);
+      }
+      .btn-ghost:hover {
+        border-color: var(--green-600);
+        color: var(--green-700);
+      }
+      .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      /* DETAILS SECTIONS */
+      .detail-card {
+        padding: 24px;
+        border-radius: 16px;
+        background: var(--glass-bg);
+        backdrop-filter: blur(18px);
+        border: 1px solid var(--glass-border);
+        box-shadow: var(--glass-shadow);
+      }
+      .detail-card h3 {
+        font-size: 16px;
+        margin-bottom: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .detail-card h3 svg {
+        width: 18px;
+        height: 18px;
+        color: var(--green-600);
+      }
+      .detail-card p {
+        font-size: 14px;
+        color: var(--ink-soft);
+        line-height: 1.6;
+      }
+
+      .spec-table {
+        width: 100%;
+        font-size: 14px;
+      }
+      .spec-table tr {
+        border-bottom: 1px solid var(--line);
+      }
+      .spec-table tr:last-child {
+        border-bottom: none;
+      }
+      .spec-table td {
+        padding: 10px 0;
+      }
+      .spec-table td:first-child {
+        color: var(--ink-faint);
+        width: 40%;
+        font-size: 13px;
+      }
+      .spec-table td:last-child {
+        font-weight: 600;
+      }
+
+      /* VENDOR CARD */
+      .vendor-info {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 16px;
+        background: var(--green-050);
+        border: 1px dashed var(--line-strong);
+        border-radius: 12px;
+      }
+      .vendor-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: var(--green-700);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-family: "Space Grotesk", sans-serif;
+        font-size: 18px;
+      }
+      .vendor-info .name {
+        font-family: "Space Grotesk", sans-serif;
+        font-weight: 600;
+        font-size: 15px;
+        margin-bottom: 3px;
+      }
+      .vendor-info .meta {
+        font-size: 12px;
+        color: var(--ink-soft);
+      }
+
+      /* RELATED PRODUCTS */
+      .related-title {
+        font-family: "Space Grotesk", sans-serif;
+        font-size: 20px;
+        font-weight: 700;
+        margin: 32px 0 16px;
+      }
+      .related-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-bottom: 40px;
+      }
+      @media (max-width: 900px) {
+        .related-grid {
+          grid-template-columns: repeat(2, 1fr);
         }
-        .detail-card h3{font-size:16px; margin-bottom:14px; display:flex; align-items:center; gap:8px;}
-        .detail-card h3 svg{width:18px; height:18px; color:var(--green-600);}
-        .detail-card p{font-size:14px; color:var(--ink-soft); line-height:1.6;}
-        
-        .spec-table{width:100%; font-size:14px;}
-        .spec-table tr{border-bottom:1px solid var(--line);}
-        .spec-table tr:last-child{border-bottom:none;}
-        .spec-table td{padding:10px 0;}
-        .spec-table td:first-child{color:var(--ink-faint); width:40%; font-size:13px;}
-        .spec-table td:last-child{font-weight:600;}
-
-        /* VENDOR CARD */
-        .vendor-info{display:flex; align-items:center; gap:14px; padding:16px; background:var(--green-050); border:1px dashed var(--line-strong); border-radius:12px;}
-        .vendor-avatar{width:48px; height:48px; border-radius:50%; background:var(--green-700); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-family:'Space Grotesk',sans-serif; font-size:18px;}
-        .vendor-info .name{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:15px; margin-bottom:3px;}
-        .vendor-info .meta{font-size:12px; color:var(--ink-soft);}
-
-        /* RELATED PRODUCTS */
-        .related-title{font-family:'Space Grotesk',sans-serif; font-size:20px; font-weight:700; margin:32px 0 16px;}
-        .related-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:40px;}
-        @media(max-width:900px){.related-grid{grid-template-columns:repeat(2,1fr);}}
-        .related-card{background:var(--glass-bg); backdrop-filter:blur(18px); border:1px solid var(--glass-border); border-radius:12px; overflow:hidden; transition:all .3s ease; box-shadow:var(--glass-shadow);}
-        .related-card:hover{transform:translateY(-3px); border-color:var(--green-600);}
-        .related-card .img{height:120px; background:linear-gradient(135deg,#eefbf1,#dcf5e3); display:flex; align-items:center; justify-content:center; font-size:36px;}
-        .related-card .img img{width:100%; height:100%; object-fit:cover;}
-        .related-card .body{padding:12px;}
-        .related-card .body h5{font-size:13px; margin-bottom:6px; line-height:1.3; font-family:'Space Grotesk',sans-serif;}
-        .related-card .body .price{font-size:16px; color:var(--green-700);}
+      }
+      .related-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(18px);
+        border: 1px solid var(--glass-border);
+        border-radius: 12px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        box-shadow: var(--glass-shadow);
+      }
+      .related-card:hover {
+        transform: translateY(-3px);
+        border-color: var(--green-600);
+      }
+      .related-card .img {
+        height: 120px;
+        background: linear-gradient(135deg, #eefbf1, #dcf5e3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 36px;
+      }
+      .related-card .img img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .related-card .body {
+        padding: 12px;
+      }
+      .related-card .body h5 {
+        font-size: 13px;
+        margin-bottom: 6px;
+        line-height: 1.3;
+        font-family: "Space Grotesk", sans-serif;
+      }
+      .related-card .body .price {
+        font-size: 16px;
+        color: var(--green-700);
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
+    <div class="blob blob-a"></div>
+    <div class="blob blob-b"></div>
 
-<div class="blob blob-a"></div>
-<div class="blob blob-b"></div>
-
-<div class="topbar anim">
-    <div class="wrap topbar-row">
+    <div class="topbar anim">
+      <div class="wrap topbar-row">
         <div class="brandmark">
-            <svg viewBox="0 0 40 40" fill="none" width="30" height="30">
-                <rect x="1" y="1" width="38" height="38" stroke="#178a4c" stroke-width="1.4" stroke-dasharray="3 3"/>
-                <path d="M9 24l2-7c.4-1.2 1.5-2 2.8-2h12.4c1.3 0 2.4.8 2.8 2l2 7" stroke="#0d3b2c" stroke-width="1.8"/>
-                <path d="M9 24h22v3.5a1.5 1.5 0 01-1.5 1.5h-1a1.5 1.5 0 01-1.5-1.5V26h-15v1.5A1.5 1.5 0 0110.5 29h-1A1.5 1.5 0 018 27.5V24z" stroke="#0d3b2c" stroke-width="1.8"/>
-            </svg>
-            <span><strong>PartMatch</strong><small>Customer Console</small></span>
+          <svg viewBox="0 0 40 40" fill="none" width="30" height="30">
+            <rect
+              x="1"
+              y="1"
+              width="38"
+              height="38"
+              stroke="#178a4c"
+              stroke-width="1.4"
+              stroke-dasharray="3 3"
+            />
+            <path
+              d="M9 24l2-7c.4-1.2 1.5-2 2.8-2h12.4c1.3 0 2.4.8 2.8 2l2 7"
+              stroke="#0d3b2c"
+              stroke-width="1.8"
+            />
+            <path
+              d="M9 24h22v3.5a1.5 1.5 0 01-1.5 1.5h-1a1.5 1.5 0 01-1.5-1.5V26h-15v1.5A1.5 1.5 0 0110.5 29h-1A1.5 1.5 0 018 27.5V24z"
+              stroke="#0d3b2c"
+              stroke-width="1.8"
+            />
+          </svg>
+          <span><strong>PartMatch</strong><small>Customer Console</small></span>
         </div>
-        <a href="{{ url_for('customer_dashboard') }}" class="navlink">🏠 Dashboard</a>
-        <a href="{{ url_for('customer_vehicles') }}" class="navlink">🚗 My Vehicles</a>
-        <a href="{{ url_for('customer_search_parts') }}" class="navlink active">🔍 Find Parts</a>
+        <a href="{{ url_for('customer_dashboard') }}" class="navlink"
+          >🏠 Dashboard</a
+        >
+        <a href="{{ url_for('customer_vehicles') }}" class="navlink"
+          >🚗 My Vehicles</a
+        >
+        <a href="{{ url_for('customer_search_parts') }}" class="navlink active"
+          >🔍 Find Parts</a
+        >
         <a href="{{ url_for('customer_orders') }}" class="navlink">📦 Orders</a>
-        <a href="{{ url_for('customer_bookings') }}" class="navlink">📅 Bookings</a>
-        <a href="{{ url_for('customer_profile') }}" class="navlink">👤 Profile</a>
+        <a href="{{ url_for('customer_bookings') }}" class="navlink"
+          >📅 Bookings</a
+        >
+        <a href="{{ url_for('customer_cart') }}" class="navlink">🛒 Cart</a>
+        <a href="{{ url_for('customer_profile') }}" class="navlink"
+          >👤 Profile</a
+        >
         <div class="nav-spacer"></div>
         <a href="{{ url_for('logout') }}" class="navlink logout">🚪 Logout</a>
+      </div>
     </div>
-</div>
 
-<div class="wrap">
-
-    <div class="breadcrumb anim">
+    <div class="wrap">
+      <div class="breadcrumb anim">
         <a href="{{ url_for('customer_search_parts') }}">Find Parts</a>
         {% if product.category_name %} / {{ product.category_name }}{% endif %}
         / {{ product.name }}
-    </div>
+      </div>
 
-    <div class="product-layout">
+      <div class="product-layout">
         <!-- IMAGE -->
         <div class="product-image-wrap anim">
-            {% if product.image %}
-            <img src="{{ url_for('static', filename='uploads/products/' + product.image) }}" alt="{{ product.name }}">
-            {% else %}
-            <div class="placeholder">📦</div>
-            {% endif %}
-            {% if product.is_compatible %}
-            <div class="compat-flag">Fits your vehicle</div>
-            {% endif %}
+          {% if product.image %}
+          <img
+            src="{{ url_for('static', filename='uploads/products/' + product.image) }}"
+            alt="{{ product.name }}"
+          />
+          {% else %}
+          <div class="placeholder">📦</div>
+          {% endif %} {% if product.is_compatible %}
+          <div class="compat-flag">Fits your vehicle</div>
+          {% endif %}
         </div>
 
         <!-- INFO -->
         <div class="product-info anim">
-            <h1>{{ product.name }}</h1>
-            {% if product.brand %}<div class="brand-line">by {{ product.brand }} {% if product.part_number %}&nbsp;•&nbsp; Part #{{ product.part_number }}{% endif %}</div>{% endif %}
-            {% if product.category_name %}<span class="category-pill">{{ product.category_name }}</span>{% endif %}
+          <h1>{{ product.name }}</h1>
+          {% if product.brand %}
+          <div class="brand-line">
+            by {{ product.brand }} {% if product.part_number %}&nbsp;•&nbsp;
+            Part #{{ product.part_number }}{% endif %}
+          </div>
+          {% endif %} {% if product.category_name %}<span class="category-pill"
+            >{{ product.category_name }}</span
+          >{% endif %}
 
-            <div class="price-box">
-                <div class="price">₹{{ '%.0f'|format(product.price) }}</div>
-                {% if product.stock_quantity > 10 %}
-                <span class="stock-tag in">✓ In Stock ({{ product.stock_quantity }})</span>
-                {% elif product.stock_quantity > 0 %}
-                <span class="stock-tag low">Only {{ product.stock_quantity }} left</span>
-                {% else %}
-                <span class="stock-tag out">Out of Stock</span>
-                {% endif %}
-            </div>
-
-            <div class="action-buttons">
-                {% if product.stock_quantity > 0 %}
-                <a href="#" class="btn btn-solid">🛒 Add to Cart</a>
-                {% else %}
-                <button class="btn btn-solid" disabled>Out of Stock</button>
-                {% endif %}
-                <a href="{{ url_for('customer_search_parts') }}" class="btn btn-ghost">← Back to Results</a>
-            </div>
-
-            {% if product.is_compatible %}
-            <div class="detail-card" style="background:var(--green-050); border-color:var(--green-100);">
-                <h3 style="color:var(--green-700);">✓ Compatible with your vehicle</h3>
-                <p>Based on the vehicles you've registered, this part will fit.</p>
-            </div>
-            {% elif vehicle_count == 0 %}
-            <div class="detail-card">
-                <h3>🚗 Check compatibility</h3>
-                <p>You haven't registered any vehicles yet. <a href="{{ url_for('customer_vehicles') }}" style="color:var(--green-600); font-weight:600;">Add a vehicle →</a></p>
-            </div>
+          <div class="price-box">
+            <div class="price">₹{{ '%.0f'|format(product.price) }}</div>
+            {% if product.stock_quantity > 10 %}
+            <span class="stock-tag in"
+              >✓ In Stock ({{ product.stock_quantity }})</span
+            >
+            {% elif product.stock_quantity > 0 %}
+            <span class="stock-tag low"
+              >Only {{ product.stock_quantity }} left</span
+            >
+            {% else %}
+            <span class="stock-tag out">Out of Stock</span>
             {% endif %}
+          </div>
 
-            {% if product.description %}
-            <div class="detail-card">
-                <h3>📄 Description</h3>
-                <p>{{ product.description }}</p>
-            </div>
+          <div class="action-buttons">
+            {% if product.stock_quantity > 0 %}
+            <form
+              method="POST"
+              action="{{ url_for('customer_add_to_cart', product_id=product.id) }}"
+              style="display: flex; gap: 10px; flex: 1; min-width: 280px"
+            >
+              <input
+                type="number"
+                name="quantity"
+                value="1"
+                min="1"
+                max="{{ product.stock_quantity }}"
+                style="
+                  width: 80px;
+                  padding: 14px;
+                  border: 1.5px solid var(--line-strong);
+                  border-radius: 10px;
+                  font-family: &quot;Inter&quot;, sans-serif;
+                  font-size: 14px;
+                  text-align: center;
+                "
+              />
+              <button type="submit" class="btn btn-solid" style="flex: 1">
+                🛒 Add to Cart
+              </button>
+            </form>
+            {% else %}
+            <button class="btn btn-solid" disabled>Out of Stock</button>
             {% endif %}
+            <a
+              href="{{ url_for('customer_search_parts') }}"
+              class="btn btn-ghost"
+              >← Back to Results</a
+            >
+          </div>
 
-            <div class="detail-card">
-                <h3>⚙️ Specifications</h3>
-                <table class="spec-table">
-                    {% if product.brand %}<tr><td>Brand</td><td>{{ product.brand }}</td></tr>{% endif %}
-                    {% if product.part_number %}<tr><td>Part Number</td><td>{{ product.part_number }}</td></tr>{% endif %}
-                    {% if product.category_name %}<tr><td>Category</td><td>{{ product.category_name }}</td></tr>{% endif %}
-                    {% if compat.make %}<tr><td>Vehicle Make</td><td>{{ compat.make }}</td></tr>{% endif %}
-                    {% if compat.model %}<tr><td>Vehicle Model</td><td>{{ compat.model }}</td></tr>{% endif %}
-                    {% if compat.variant %}<tr><td>Variant</td><td>{{ compat.variant }}</td></tr>{% endif %}
-                    {% if compat.fuel_type %}<tr><td>Fuel Type</td><td>{{ compat.fuel_type }}</td></tr>{% endif %}
-                    {% if compat.year_from or compat.year_to %}
-                    <tr><td>Year Range</td><td>{{ compat.year_from or '—' }} to {{ compat.year_to or '—' }}</td></tr>
-                    {% endif %}
-                </table>
-            </div>
+          {% if product.is_compatible %}
+          <div
+            class="detail-card"
+            style="background: var(--green-050); border-color: var(--green-100)"
+          >
+            <h3 style="color: var(--green-700)">
+              ✓ Compatible with your vehicle
+            </h3>
+            <p>Based on the vehicles you've registered, this part will fit.</p>
+          </div>
+          {% elif vehicle_count == 0 %}
+          <div class="detail-card">
+            <h3>🚗 Check compatibility</h3>
+            <p>
+              You haven't registered any vehicles yet.
+              <a
+                href="{{ url_for('customer_vehicles') }}"
+                style="color: var(--green-600); font-weight: 600"
+                >Add a vehicle →</a
+              >
+            </p>
+          </div>
+          {% endif %} {% if product.description %}
+          <div class="detail-card">
+            <h3>📄 Description</h3>
+            <p>{{ product.description }}</p>
+          </div>
+          {% endif %}
 
-            <div class="detail-card">
-                <h3>🏪 Sold By</h3>
-                <div class="vendor-info">
-                    <div class="vendor-avatar">{{ (product.business_name or product.vendor_name)[:1].upper() }}</div>
-                    <div>
-                        <div class="name">{{ product.business_name or product.vendor_name }}</div>
-                        <div class="meta">
-                            {% if product.vendor_city %}📍 {{ product.vendor_city }}{% endif %}
-                            {% if product.vendor_phone %} &nbsp;•&nbsp; 📞 {{ product.vendor_phone }}{% endif %}
-                        </div>
-                    </div>
+          <div class="detail-card">
+            <h3>⚙️ Specifications</h3>
+            <table class="spec-table">
+              {% if product.brand %}
+              <tr>
+                <td>Brand</td>
+                <td>{{ product.brand }}</td>
+              </tr>
+              {% endif %} {% if product.part_number %}
+              <tr>
+                <td>Part Number</td>
+                <td>{{ product.part_number }}</td>
+              </tr>
+              {% endif %} {% if product.category_name %}
+              <tr>
+                <td>Category</td>
+                <td>{{ product.category_name }}</td>
+              </tr>
+              {% endif %} {% if compat.make %}
+              <tr>
+                <td>Vehicle Make</td>
+                <td>{{ compat.make }}</td>
+              </tr>
+              {% endif %} {% if compat.model %}
+              <tr>
+                <td>Vehicle Model</td>
+                <td>{{ compat.model }}</td>
+              </tr>
+              {% endif %} {% if compat.variant %}
+              <tr>
+                <td>Variant</td>
+                <td>{{ compat.variant }}</td>
+              </tr>
+              {% endif %} {% if compat.fuel_type %}
+              <tr>
+                <td>Fuel Type</td>
+                <td>{{ compat.fuel_type }}</td>
+              </tr>
+              {% endif %} {% if compat.year_from or compat.year_to %}
+              <tr>
+                <td>Year Range</td>
+                <td>
+                  {{ compat.year_from or '—' }} to {{ compat.year_to or '—' }}
+                </td>
+              </tr>
+              {% endif %}
+            </table>
+          </div>
+
+          <div class="detail-card">
+            <h3>🏪 Sold By</h3>
+            <div class="vendor-info">
+              <div class="vendor-avatar">
+                {{ (product.business_name or product.vendor_name)[:1].upper() }}
+              </div>
+              <div>
+                <div class="name">
+                  {{ product.business_name or product.vendor_name }}
                 </div>
+                <div class="meta">
+                  {% if product.vendor_city %}📍 {{ product.vendor_city }}{%
+                  endif %} {% if product.vendor_phone %} &nbsp;•&nbsp; 📞 {{
+                  product.vendor_phone }}{% endif %}
+                </div>
+              </div>
             </div>
+          </div>
         </div>
-    </div>
+      </div>
 
-    <!-- RELATED -->
-    {% if related_products %}
-    <h2 class="related-title">More from {{ product.category_name }}</h2>
-    <div class="related-grid">
+      <!-- RELATED -->
+      {% if related_products %}
+      <h2 class="related-title">More from {{ product.category_name }}</h2>
+      <div class="related-grid">
         {% for rp in related_products %}
-        <a href="{{ url_for('customer_product_detail', product_id=rp.id) }}" class="related-card">
-            <div class="img">
-                {% if rp.image %}
-                <img src="{{ url_for('static', filename='uploads/products/' + rp.image) }}" alt="{{ rp.name }}">
-                {% else %}
-                📦
-                {% endif %}
+        <a
+          href="{{ url_for('customer_product_detail', product_id=rp.id) }}"
+          class="related-card"
+        >
+          <div class="img">
+            {% if rp.image %}
+            <img
+              src="{{ url_for('static', filename='uploads/products/' + rp.image) }}"
+              alt="{{ rp.name }}"
+            />
+            {% else %} 📦 {% endif %}
+          </div>
+          <div class="body">
+            <h5>{{ rp.name }}</h5>
+            {% if rp.brand %}
+            <div
+              style="
+                font-size: 11px;
+                color: var(--ink-faint);
+                margin-bottom: 6px;
+              "
+            >
+              {{ rp.brand }}
             </div>
-            <div class="body">
-                <h5>{{ rp.name }}</h5>
-                {% if rp.brand %}<div style="font-size:11px; color:var(--ink-faint); margin-bottom:6px;">{{ rp.brand }}</div>{% endif %}
-                <div class="price">₹{{ '%.0f'|format(rp.price) }}</div>
-            </div>
+            {% endif %}
+            <div class="price">₹{{ '%.0f'|format(rp.price) }}</div>
+          </div>
         </a>
         {% endfor %}
+      </div>
+      {% endif %}
     </div>
-    {% endif %}
-
-</div>
-
-</body>
+  </body>
 </html>

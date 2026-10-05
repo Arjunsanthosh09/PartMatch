@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Cart — PartMatch</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root{
+          --ink:#0f1e17; --ink-soft:#4c5f56; --ink-faint:#8a9992;
+          --green-900:#0d3b2c; --green-700:#146c43; --green-600:#178a4c;
+          --green-500:#1fa85a; --green-100:#dcf5e3; --green-050:#eefbf1;
+          --line:#d9e9dd; --line-strong:#b8d4c0; --red:#e74c3c;
+          --glass-bg:rgba(255,255,255,0.5);
+          --glass-bg-strong:rgba(255,255,255,0.72);
+          --glass-border:rgba(255,255,255,0.8);
+          --glass-shadow:0 8px 32px -8px rgba(13,59,44,0.2);
+        }
+        *{box-sizing:border-box; margin:0; padding:0;}
+        body{font-family:'Inter',sans-serif; color:var(--ink); min-height:100vh; position:relative;}
+        h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif;}
+        .wrap{max-width:1280px; margin:0 auto; padding:0 32px;}
+        a{color:inherit; text-decoration:none;}
+
+        body::before{
+          content:""; position:fixed; inset:0; z-index:-3;
+          background:
+            radial-gradient(ellipse 55% 45% at 6% -8%, rgba(34,197,94,0.30) 0%, transparent 62%),
+            radial-gradient(ellipse 55% 50% at 102% -4%, rgba(45,212,191,0.26) 0%, transparent 58%),
+            linear-gradient(180deg, #eefaf1 0%, #e2f4ea 45%, #edf8f0 100%);
+        }
+        .blob{position:fixed; z-index:-1; border-radius:50%; filter:blur(64px); opacity:.75; pointer-events:none; animation:blobFloat 14s ease-in-out infinite;}
+        .blob-a{width:460px; height:460px; background:radial-gradient(circle,#7fe0a3,transparent 70%); top:-140px; right:-100px;}
+        .blob-b{width:380px; height:380px; background:radial-gradient(circle,#6fe3d6,transparent 70%); bottom:6%; left:-120px; animation-delay:3s;}
+        @keyframes blobFloat{0%,100%{transform:translate(0,0) scale(1);} 50%{transform:translate(24px,-22px) scale(1.06);}}
+
+        @keyframes fadeUp{from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:translateY(0);}}
+        .anim{animation:fadeUp .6s cubic-bezier(.22,.61,.36,1) both;}
+
+        /* TOPBAR */
+        .topbar{position:sticky; top:0; z-index:100; background:var(--glass-bg-strong); backdrop-filter:blur(18px) saturate(1.7); border-bottom:1px solid var(--glass-border); box-shadow:0 4px 24px -12px rgba(13,59,44,0.12);}
+        .topbar-row{display:flex; align-items:center; gap:6px; padding:14px 0; overflow-x:auto; scrollbar-width:none;}
+        .topbar-row::-webkit-scrollbar{display:none;}
+        .brandmark{display:flex; align-items:center; gap:10px; margin-right:18px; flex-shrink:0;}
+        .brandmark strong{font-family:'Space Grotesk',sans-serif; font-size:17px; font-weight:700;}
+        .brandmark small{display:block; font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-faint);}
+        .navlink{display:flex; align-items:center; gap:7px; padding:9px 14px; font-size:13.5px; font-weight:600; color:var(--ink-soft); border:1px solid transparent; border-radius:8px; white-space:nowrap; transition:all .25s ease; flex-shrink:0;}
+        .navlink:hover{background:var(--green-050); color:var(--green-700); border-color:var(--line);}
+        .navlink.active{background:var(--green-700); color:#fff;}
+        .nav-spacer{flex:1;}
+        .navlink.logout{color:var(--red); margin-left:auto;}
+
+        /* PAGE HEAD */
+        .page-head{padding:34px 0 6px;}
+        .eyebrow{display:inline-flex; align-items:center; gap:8px; font-family:'IBM Plex Mono',monospace; font-size:11.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--green-700); font-weight:500; padding:6px 12px; border:1px dashed var(--line-strong); background:var(--green-050);}
+        .eyebrow::before{content:""; width:6px; height:6px; background:var(--green-500); border-radius:50%;}
+        .page-head h1{font-size:28px; margin-top:10px;}
+
+        /* CART LAYOUT */
+        .cart-layout{display:grid; grid-template-columns:1fr 360px; gap:24px; margin:24px 0 40px;}
+        @media(max-width:900px){.cart-layout{grid-template-columns:1fr;}}
+
+        .cart-items{padding:24px; border-radius:16px; background:var(--glass-bg); backdrop-filter:blur(18px); border:1px solid var(--glass-border); box-shadow:var(--glass-shadow);}
+
+        .cart-item{display:grid; grid-template-columns:100px 1fr auto; gap:16px; padding:16px 0; border-bottom:1px solid var(--line); align-items:center;}
+        .cart-item:last-child{border-bottom:none;}
+        .cart-item .img{width:100px; height:100px; border-radius:10px; background:linear-gradient(135deg,#eefbf1,#dcf5e3); display:flex; align-items:center; justify-content:center; font-size:36px; overflow:hidden;}
+        .cart-item .img img{width:100%; height:100%; object-fit:cover;}
+        .cart-item h4{font-size:15px; margin-bottom:4px;}
+        .cart-item .brand{font-size:12px; color:var(--ink-faint); font-family:'IBM Plex Mono',monospace; margin-bottom:6px;}
+        .cart-item .vendor{font-size:12px; color:var(--ink-soft); margin-bottom:8px;}
+        .cart-item .price{font-family:'Space Grotesk',sans-serif; font-size:18px; color:var(--green-700); font-weight:700;}
+        .cart-item .actions{display:flex; flex-direction:column; gap:8px; align-items:flex-end;}
+        
+        .qty-form{display:flex; gap:6px; align-items:center;}
+        .qty-form input{width:60px; padding:8px; border:1.5px solid var(--line-strong); border-radius:8px; font-size:14px; text-align:center; font-family:'Inter',sans-serif;}
+        .qty-form button{padding:8px 12px; border-radius:8px; border:none; background:var(--green-700); color:#fff; cursor:pointer; font-weight:600; font-size:12px;}
+        
+        .remove-link{font-size:12px; color:var(--red); cursor:pointer;}
+        .remove-link:hover{text-decoration:underline;}
+
+        /* SUMMARY */
+        .cart-summary{padding:24px; border-radius:16px; background:var(--glass-bg-strong); backdrop-filter:blur(18px); border:1px solid var(--glass-border); box-shadow:var(--glass-shadow); height:fit-content; position:sticky; top:90px;}
+        .cart-summary h3{font-size:16px; margin-bottom:16px;}
+        .summary-row{display:flex; justify-content:space-between; padding:10px 0; font-size:14px;}
+        .summary-row.total{border-top:2px solid var(--line); margin-top:8px; padding-top:14px; font-size:20px; font-family:'Space Grotesk',sans-serif; font-weight:700; color:var(--green-700);}
+        
+        .btn{font-family:'Inter',sans-serif; font-weight:600; font-size:14px; cursor:pointer; border:none; padding:14px 24px; border-radius:10px; display:inline-flex; align-items:center; justify-content:center; gap:8px; transition:all .25s ease; text-decoration:none; width:100%;}
+        .btn-solid{background:var(--green-700); color:#fff;}
+        .btn-solid:hover{background:var(--green-900);}
+        .btn-ghost{background:transparent; color:var(--ink); border:1.5px solid var(--line-strong);}
+        .btn-ghost:hover{border-color:var(--green-600); color:var(--green-700);}
+
+        .empty-cart{text-align:center; padding:60px 20px;}
+        .empty-cart .icon{font-size:64px; margin-bottom:16px; opacity:.6;}
+        .empty-cart h3{font-size:18px; margin-bottom:8px;}
+        .empty-cart p{color:var(--ink-soft); margin-bottom:20px;}
+    </style>
+</head>
+<body>
+
+<div class="blob blob-a"></div>
+<div class="blob blob-b"></div>
+
+<div class="topbar anim">
+    <div class="wrap topbar-row">
+        <div class="brandmark">
+            <svg viewBox="0 0 40 40" fill="none" width="30" height="30">
+                <rect x="1" y="1" width="38" height="38" stroke="#178a4c" stroke-width="1.4" stroke-dasharray="3 3"/>
+                <path d="M9 24l2-7c.4-1.2 1.5-2 2.8-2h12.4c1.3 0 2.4.8 2.8 2l2 7" stroke="#0d3b2c" stroke-width="1.8"/>
+            </svg>
+            <span><strong>PartMatch</strong><small>Customer Console</small></span>
+        </div>
+        <a href="{{ url_for('customer_dashboard') }}" class="navlink">🏠 Dashboard</a>
+        <a href="{{ url_for('customer_vehicles') }}" class="navlink">🚗 My Vehicles</a>
+        <a href="{{ url_for('customer_search_parts') }}" class="navlink">🔍 Find Parts</a>
+        <a href="{{ url_for('customer_orders') }}" class="navlink">📦 Orders</a>
+        <a href="{{ url_for('customer_cart') }}" class="navlink active">🛒 Cart</a>
+        <a href="{{ url_for('customer_profile') }}" class="navlink">👤 Profile</a>
+        <div class="nav-spacer"></div>
+        <a href="{{ url_for('logout') }}" class="navlink logout">🚪 Logout</a>
+    </div>
+</div>
+
+<div class="wrap">
+
+    <div class="page-head anim">
+        <span class="eyebrow">Shopping Cart</span>
+        <h1>My Cart</h1>
+    </div>
+
+    {% if cart_items %}
+    <div class="cart-layout">
+        <!-- ITEMS -->
+        <div class="cart-items anim">
+            {% for item in cart_items %}
+            <div class="cart-item">
+                <div class="img">
+                    {% if item.product.image %}
+                    <img src="{{ url_for('static', filename='uploads/products/' + item.product.image) }}">
+                    {% else %}📦{% endif %}
+                </div>
+                <div>
+                    <h4>{{ item.product.name }}</h4>
+                    {% if item.product.brand %}<div class="brand">{{ item.product.brand }}</div>{% endif %}
+                    <div class="vendor">🏪 {{ item.product.business_name or item.product.vendor_name }}</div>
+                    <div class="price">₹{{ '%.0f'|format(item.product.price) }} each</div>
+                </div>
+                <div class="actions">
+                    <form method="POST" action="{{ url_for('customer_cart_update', product_id=item.product.id) }}" class="qty-form">
+                        <input type="number" name="quantity" value="{{ item.quantity }}" min="0" max="{{ item.product.stock_quantity }}">
+                        <button type="submit">Update</button>
+                    </form>
+                    <div style="font-family:'Space Grotesk',sans-serif; font-weight:700;">₹{{ '%.0f'|format(item.item_total) }}</div>
+                    <a href="{{ url_for('customer_cart_remove', product_id=item.product.id) }}" class="remove-link" onclick="return confirm('Remove this item?')">✕ Remove</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- SUMMARY -->
+        <div class="cart-summary anim">
+            <h3>Order Summary</h3>
+            <div class="summary-row"><span>Subtotal</span><span>₹{{ '%.0f'|format(subtotal) }}</span></div>
+            <div class="summary-row"><span>Shipping</span><span>Free</span></div>
+            <div class="summary-row total"><span>Total</span><span>₹{{ '%.0f'|format(subtotal) }}</span></div>
+            <a href="{{ url_for('customer_checkout') }}" class="btn btn-solid" style="margin-top:16px;">Proceed to Checkout →</a>
+            <a href="{{ url_for('customer_search_parts') }}" class="btn btn-ghost" style="margin-top:10px;">Continue Shopping</a>
+        </div>
+    </div>
+    {% else %}
+    <div class="cart-items anim">
+        <div class="empty-cart">
+            <div class="icon">🛒</div>
+            <h3>Your cart is empty</h3>
+            <p>Browse our marketplace to find compatible parts for your vehicle.</p>
+            <a href="{{ url_for('customer_search_parts') }}" class="btn btn-solid" style="max-width:280px; margin:0 auto;">🔍 Find Parts</a>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+</body>
+</html>

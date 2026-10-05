@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Invoice #{{ order.id }} — PartMatch</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root{
+          --ink:#0f1e17; --ink-soft:#4c5f56; --ink-faint:#8a9992;
+          --green-700:#146c43; --green-600:#178a4c; --green-050:#eefbf1;
+          --line:#d9e9dd; --line-strong:#b8d4c0;
+        }
+        *{box-sizing:border-box; margin:0; padding:0;}
+        body{font-family:'Inter',sans-serif; color:var(--ink); background:#f4faf5; padding:40px 20px;}
+        .invoice{max-width:800px; margin:0 auto; background:#fff; border:1px solid var(--line); border-radius:12px; padding:40px; box-shadow:0 8px 32px -12px rgba(13,59,44,0.15);}
+        
+        .header{display:flex; justify-content:space-between; align-items:flex-start; padding-bottom:24px; border-bottom:2px solid var(--line); margin-bottom:24px;}
+        .brand{display:flex; align-items:center; gap:12px;}
+        .brand svg{width:44px; height:44px;}
+        .brand h1{font-family:'Space Grotesk',sans-serif; font-size:22px; font-weight:700; margin:0; letter-spacing:-0.02em;}
+        .brand small{font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.15em; text-transform:uppercase; color:var(--ink-faint); display:block; margin-top:2px;}
+        
+        .invoice-meta{text-align:right;}
+        .invoice-meta h2{font-family:'Space Grotesk',sans-serif; font-size:26px; color:var(--green-700); margin:0 0 4px 0;}
+        .invoice-meta p{font-size:12px; color:var(--ink-soft); font-family:'IBM Plex Mono',monospace; margin:2px 0;}
+        
+        .info-grid{display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-bottom:28px;}
+        .info-block h4{font-family:'IBM Plex Mono',monospace; font-size:10.5px; text-transform:uppercase; letter-spacing:.12em; color:var(--ink-faint); margin-bottom:8px; font-weight:500;}
+        .info-block p{font-size:13.5px; line-height:1.6; margin:2px 0;}
+        .info-block strong{font-weight:600;}
+        
+        .status-badge{display:inline-block; padding:4px 12px; border-radius:20px; font-size:11px; font-weight:700; text-transform:uppercase; background:#d5f5e3; color:#27ae60;}
+        
+        table{width:100%; border-collapse:collapse; margin-bottom:24px;}
+        thead th{text-align:left; padding:12px 10px; font-family:'IBM Plex Mono',monospace; font-size:10.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-faint); border-bottom:2px solid var(--line); background:var(--green-050); font-weight:500;}
+        thead th:first-child{border-top-left-radius:8px;}
+        thead th:last-child{border-top-right-radius:8px; text-align:right;}
+        tbody td{padding:14px 10px; border-bottom:1px solid var(--line); font-size:13.5px; vertical-align:top;}
+        tbody td:last-child{text-align:right; font-weight:600;}
+        tbody tr:last-child td{border-bottom:none;}
+        .item-name{font-weight:600; margin-bottom:3px;}
+        .item-meta{font-size:11.5px; color:var(--ink-faint); font-family:'IBM Plex Mono',monospace;}
+        
+        .totals{margin-left:auto; width:280px; padding-top:20px; border-top:2px solid var(--line);}
+        .total-row{display:flex; justify-content:space-between; padding:6px 0; font-size:13.5px;}
+        .total-row.grand{padding-top:14px; margin-top:10px; border-top:2px solid var(--line); font-family:'Space Grotesk',sans-serif; font-size:20px; font-weight:700; color:var(--green-700);}
+        
+        .footer{margin-top:40px; padding-top:24px; border-top:1px solid var(--line); text-align:center; font-size:12px; color:var(--ink-faint); font-family:'IBM Plex Mono',monospace; line-height:1.7;}
+        
+        .actions{display:flex; justify-content:center; gap:12px; margin-top:30px; padding-top:24px; border-top:1px solid var(--line);}
+        .btn{font-family:'Inter',sans-serif; font-weight:600; font-size:13.5px; cursor:pointer; border:none; padding:12px 22px; border-radius:8px; text-decoration:none; display:inline-flex; align-items:center; gap:8px; transition:all .2s;}
+        .btn-print{background:var(--green-700); color:#fff;}
+        .btn-print:hover{background:#0d3b2c;}
+        .btn-back{background:transparent; color:var(--ink); border:1.5px solid var(--line-strong);}
+        .btn-back:hover{border-color:var(--green-600); color:var(--green-700);}
+        
+        @media print{
+            body{background:#fff; padding:0;}
+            .invoice{box-shadow:none; border:none; padding:20px;}
+            .actions{display:none;}
+            thead th{background:#f4faf5 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact;}
+            .status-badge{-webkit-print-color-adjust:exact; print-color-adjust:exact;}
+        }
+        @media (max-width:600px){
+            .header{flex-direction:column; gap:16px;}
+            .invoice-meta{text-align:left;}
+            .info-grid{grid-template-columns:1fr;}
+        }
+    </style>
+</head>
+<body>
+
+<div class="invoice" id="invoice">
+
+    <!-- Header -->
+    <div class="header">
+        <div class="brand">
+            <svg viewBox="0 0 40 40" fill="none">
+                <rect x="1" y="1" width="38" height="38" stroke="#178a4c" stroke-width="1.4" stroke-dasharray="3 3"/>
+                <path d="M9 24l2-7c.4-1.2 1.5-2 2.8-2h12.4c1.3 0 2.4.8 2.8 2l2 7" stroke="#0d3b2c" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M9 24h22v3.5a1.5 1.5 0 01-1.5 1.5h-1a1.5 1.5 0 01-1.5-1.5V26h-15v1.5A1.5 1.5 0 0110.5 29h-1A1.5 1.5 0 018 27.5V24z" stroke="#0d3b2c" stroke-width="1.8" stroke-linejoin="round"/>
+                <circle cx="14" cy="24" r="1.6" fill="#178a4c"/>
+                <circle cx="26" cy="24" r="1.6" fill="#178a4c"/>
+            </svg>
+            <div>
+                <h1>PartMatch</h1>
+                <small>Smart Vehicle Spare Parts Marketplace</small>
+            </div>
+        </div>
+        <div class="invoice-meta">
+            <h2>INVOICE</h2>
+            <p>#PM-{{ '%05d'|format(order.id) }}</p>
+            <p>{{ order.created_at.strftime('%d %b %Y') }}</p>
+            <div style="margin-top:8px;"><span class="status-badge">{{ order.order_status }}</span></div>
+        </div>
+    </div>
+
+    <!-- Customer / Shipping Info -->
+    <div class="info-grid">
+        <div class="info-block">
+            <h4>Billed To</h4>
+            <p><strong>{{ order.customer_name }}</strong></p>
+            <p>{{ order.customer_email }}</p>
+            {% if order.customer_phone %}<p>{{ order.customer_phone }}</p>{% endif %}
+        </div>
+        <div class="info-block">
+            <h4>Shipping Address</h4>
+            <p>{{ order.shipping_address }}</p>
+        </div>
+    </div>
+
+    <!-- Items Table -->
+    <table>
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Vendor</th>
+                <th>Qty</th>
+                <th>Unit Price</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>
+                    <div class="item-name">{{ item.product_name }}</div>
+                    {% if item.brand or item.part_number %}
+                    <div class="item-meta">
+                        {% if item.brand %}{{ item.brand }}{% endif %}
+                        {% if item.part_number %} · #{{ item.part_number }}{% endif %}
+                    </div>
+                    {% endif %}
+                </td>
+                <td style="font-size:12.5px; color:var(--ink-soft);">{{ item.business_name or item.vendor_name }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>₹{{ '%.2f'|format(item.price_per_unit) }}</td>
+                <td>₹{{ '%.2f'|format(item.quantity * item.price_per_unit) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Totals -->
+    <div class="totals">
+        <div class="total-row"><span>Subtotal</span><span>₹{{ '%.2f'|format(order.total_amount) }}</span></div>
+        <div class="total-row"><span>Shipping</span><span>Free</span></div>
+        <div class="total-row grand"><span>Total Paid</span><span>₹{{ '%.2f'|format(order.total_amount) }}</span></div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p><strong>Thank you for your purchase!</strong></p>
+        <p>This is a computer-generated invoice. No signature required.</p>
+        <p style="margin-top:8px;">© 2026 PartMatch · Smart Vehicle Spare Parts Marketplace &amp; Maintenance Recommendation System</p>
+    </div>
+
+    <!-- Buttons (hidden when printing) -->
+    <div class="actions">
+        <button onclick="window.print()" class="btn btn-print">🖨️ Print / Save as PDF</button>
+        <a href="{{ url_for('customer_orders') }}" class="btn btn-back">← Back to Orders</a>
+    </div>
+
+</div>
+
+</body>
+</html>

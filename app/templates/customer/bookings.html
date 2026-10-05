@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bookings — PartMatch</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root{
+          --ink:#0f1e17; --ink-soft:#4c5f56; --ink-faint:#8a9992;
+          --green-900:#0d3b2c; --green-700:#146c43; --green-600:#178a4c;
+          --green-500:#1fa85a; --green-050:#eefbf1; --line:#d9e9dd; --line-strong:#b8d4c0;
+          --red:#e74c3c; --amber:#e67e22; --blue:#2980b9;
+          --glass-bg:rgba(255,255,255,0.5); --glass-bg-strong:rgba(255,255,255,0.72);
+          --glass-border:rgba(255,255,255,0.8); --glass-shadow:0 8px 32px -8px rgba(13,59,44,0.2);
+        }
+        *{box-sizing:border-box; margin:0; padding:0;}
+        body{font-family:'Inter',sans-serif; color:var(--ink); min-height:100vh; position:relative;}
+        h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif;}
+        .wrap{max-width:1280px; margin:0 auto; padding:0 32px;}
+        a{color:inherit; text-decoration:none;}
+        body::before{content:""; position:fixed; inset:0; z-index:-3;
+          background: radial-gradient(ellipse 55% 45% at 6% -8%, rgba(34,197,94,0.30) 0%, transparent 62%),
+            radial-gradient(ellipse 55% 50% at 102% -4%, rgba(45,212,191,0.26) 0%, transparent 58%),
+            linear-gradient(180deg, #eefaf1 0%, #e2f4ea 45%, #edf8f0 100%);}
+        @keyframes fadeUp{from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:translateY(0);}}
+        .anim{animation:fadeUp .6s cubic-bezier(.22,.61,.36,1) both;}
+
+        .topbar{position:sticky; top:0; z-index:100; background:var(--glass-bg-strong); backdrop-filter:blur(18px); border-bottom:1px solid var(--glass-border); padding:14px 0;}
+        .topbar-row{display:flex; align-items:center; gap:6px; overflow-x:auto; scrollbar-width:none;}
+        .brandmark{display:flex; align-items:center; gap:10px; margin-right:18px; font-family:'Space Grotesk',sans-serif; font-weight:700;}
+        .navlink{display:flex; align-items:center; gap:7px; padding:9px 14px; font-size:13.5px; font-weight:600; color:var(--ink-soft); border-radius:8px; white-space:nowrap; flex-shrink:0;}
+        .navlink:hover{background:var(--green-050); color:var(--green-700);}
+        .navlink.active{background:var(--green-700); color:#fff;}
+        .nav-spacer{flex:1;}
+        .navlink.logout{color:var(--red); margin-left:auto;}
+
+        .page-head{padding:34px 0 20px;}
+        .eyebrow{display:inline-flex; align-items:center; gap:8px; font-family:'IBM Plex Mono',monospace; font-size:11.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--green-700); padding:6px 12px; border:1px dashed var(--line-strong); background:var(--green-050);}
+        .eyebrow::before{content:""; width:6px; height:6px; background:var(--green-500); border-radius:50%;}
+        .page-head h1{font-size:28px; margin-top:10px;}
+
+        .layout{display:grid; grid-template-columns:1fr 1.3fr; gap:24px; margin-bottom:40px;}
+        @media(max-width:960px){.layout{grid-template-columns:1fr;}}
+
+        .card{padding:24px; border-radius:16px; background:var(--glass-bg); backdrop-filter:blur(18px); border:1px solid var(--glass-border); box-shadow:var(--glass-shadow); margin-bottom:20px;}
+        .card h3{font-size:16px; margin-bottom:18px; display:flex; align-items:center; gap:8px;}
+
+        .field{margin-bottom:14px;}
+        .field label{display:block; font-size:13px; font-weight:600; margin-bottom:6px;}
+        .field input,.field select,.field textarea{width:100%; padding:11px 14px; border:1.5px solid var(--line-strong); border-radius:10px; font-family:'Inter',sans-serif; font-size:14px; background:rgba(255,255,255,0.7);}
+        .field input:focus,.field select:focus,.field textarea:focus{outline:none; border-color:var(--green-600); background:#fff;}
+        .field-row{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+        @media(max-width:500px){.field-row{grid-template-columns:1fr;}}
+
+        .btn{font-family:'Inter',sans-serif; font-weight:600; font-size:14px; cursor:pointer; border:none; padding:12px 22px; border-radius:10px; display:inline-flex; align-items:center; justify-content:center; gap:8px; transition:all .25s ease; text-decoration:none;}
+        .btn-solid{background:var(--green-700); color:#fff; width:100%;}
+        .btn-solid:hover{background:var(--green-900);}
+        .btn-sm{padding:7px 14px; font-size:12px;}
+
+        .booking{padding:18px; border-radius:12px; background:rgba(255,255,255,0.7); border:1px solid var(--line); margin-bottom:12px;}
+        .booking-head{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:10px;}
+        .booking-head h4{font-size:15px; margin-bottom:4px;}
+        .booking-head .meta{font-size:12px; color:var(--ink-faint); font-family:'IBM Plex Mono',monospace;}
+        .booking-body{font-size:13px; color:var(--ink-soft); line-height:1.7;}
+        .badge{display:inline-block; padding:3px 10px; border-radius:20px; font-size:10.5px; font-weight:700; text-transform:uppercase;}
+        .badge-booked{background:#fef9e7; color:var(--amber);}
+        .badge-in_progress{background:#dbeafe; color:var(--blue);}
+        .badge-completed{background:#d5f5e3; color:#27ae60;}
+        .badge-cancelled{background:#fadbd8; color:var(--red);}
+
+        .empty{text-align:center; padding:40px 20px; color:var(--ink-faint);}
+        .empty .icon{font-size:48px; margin-bottom:12px; opacity:.6;}
+    </style>
+</head>
+<body>
+
+<div class="topbar anim">
+    <div class="wrap topbar-row">
+        <div class="brandmark">🔧 PartMatch · Bookings</div>
+        <a href="{{ url_for('customer_dashboard') }}" class="navlink">🏠 Dashboard</a>
+        <a href="{{ url_for('customer_vehicles') }}" class="navlink">🚗 My Vehicles</a>
+        <a href="{{ url_for('customer_search_parts') }}" class="navlink">🔍 Find Parts</a>
+        <a href="{{ url_for('customer_orders') }}" class="navlink">📦 Orders</a>
+        <a href="{{ url_for('customer_cart') }}" class="navlink">🛒 Cart</a>
+        <a href="{{ url_for('customer_bookings') }}" class="navlink active">📅 Bookings</a>
+        <a href="{{ url_for('customer_profile') }}" class="navlink">👤 Profile</a>
+        <div class="nav-spacer"></div>
+        <a href="{{ url_for('logout') }}" class="navlink logout">🚪 Logout</a>
+    </div>
+</div>
+
+<div class="wrap">
+    <div class="page-head anim">
+        <span class="eyebrow">Service Bookings</span>
+        <h1>Book Installation & Servicing</h1>
+    </div>
+
+    <div class="layout">
+        <!-- BOOKING FORM -->
+        <div class="anim">
+            <div class="card">
+                <h3>➕ New Booking</h3>
+                {% if service_centers and vehicles %}
+                <form method="POST">
+                    <div class="field">
+                        <label>Service Center *</label>
+                        <select name="station_id" required>
+                            <option value="">Choose a center</option>
+                            {% for sc in service_centers %}
+                            <option value="{{ sc.id }}">{{ sc.center_name }} — {{ sc.city or 'N/A' }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>My Vehicle *</label>
+                        <select name="vehicle_id" required>
+                            <option value="">Select vehicle</option>
+                            {% for v in vehicles %}
+                            <option value="{{ v.id }}">{{ v.make }} {{ v.model }} ({{ v.registration_number or v.year }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="field-row">
+                        <div class="field">
+                            <label>Date *</label>
+                            <input type="date" name="booking_date" required min="{{ '' }}">
+                        </div>
+                        <div class="field">
+                            <label>Time Slot *</label>
+                            <select name="time_slot" required>
+                                <option value="">Select time</option>
+                                <option>09:00 - 10:00</option>
+                                <option>10:00 - 11:00</option>
+                                <option>11:00 - 12:00</option>
+                                <option>12:00 - 13:00</option>
+                                <option>14:00 - 15:00</option>
+                                <option>15:00 - 16:00</option>
+                                <option>16:00 - 17:00</option>
+                                <option>17:00 - 18:00</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label>Service Type</label>
+                        <select name="service_type">
+                            <option>General Service</option>
+                            <option>Oil Change</option>
+                            <option>Brake Replacement</option>
+                            <option>Battery Replacement</option>
+                            <option>Tyre Service</option>
+                            <option>Part Installation</option>
+                            <option>Full Inspection</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Notes (optional)</label>
+                        <textarea name="notes" rows="2" placeholder="Any specific instructions..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-solid">📅 Confirm Booking</button>
+                </form>
+                {% else %}
+                <div class="empty">
+                    <div class="icon">⚠️</div>
+                    <p><strong>No service centers available.</strong></p>
+                    <p style="margin-top:8px; font-size:13px;">Either no centers have been approved yet, or you haven't registered a vehicle.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- MY BOOKINGS -->
+        <div class="anim">
+            <div class="card">
+                <h3>📅 My Bookings ({{ bookings|length }})</h3>
+                {% for b in bookings %}
+                <div class="booking">
+                    <div class="booking-head">
+                        <div>
+                            <h4>{{ b.center_name }}</h4>
+                            <div class="meta">{{ b.booking_date }} · {{ b.time_slot }}</div>
+                        </div>
+                        <span class="badge badge-{{ b.status }}">{{ b.status.replace('_', ' ') }}</span>
+                    </div>
+                    <div class="booking-body">
+                        <strong>Vehicle:</strong> {{ b.make }} {{ b.model }} {% if b.registration_number %}({{ b.registration_number }}){% endif %}<br>
+                        <strong>Service:</strong> {{ b.service_type or 'General Service' }}
+                        {% if b.notes %}<br><strong>Notes:</strong> {{ b.notes }}{% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <div class="empty">
+                    <div class="icon">📅</div>
+                    <p>No bookings yet.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

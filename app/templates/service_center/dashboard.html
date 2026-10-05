@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Center Dashboard — PartMatch</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root{
+          --ink:#0f1e17; --ink-soft:#4c5f56; --ink-faint:#8a9992;
+          --green-900:#0d3b2c; --green-700:#146c43; --green-600:#178a4c;
+          --green-500:#1fa85a; --green-050:#eefbf1; --line:#d9e9dd; --line-strong:#b8d4c0;
+          --red:#e74c3c; --amber:#e67e22; --blue:#2980b9;
+          --glass-bg:rgba(255,255,255,0.5); --glass-bg-strong:rgba(255,255,255,0.72);
+          --glass-border:rgba(255,255,255,0.8); --glass-shadow:0 8px 32px -8px rgba(13,59,44,0.2);
+        }
+        *{box-sizing:border-box; margin:0; padding:0;}
+        body{font-family:'Inter',sans-serif; color:var(--ink); min-height:100vh;}
+        h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif;}
+        .wrap{max-width:1280px; margin:0 auto; padding:0 32px;}
+        a{color:inherit; text-decoration:none;}
+        body::before{content:""; position:fixed; inset:0; z-index:-3;
+          background: radial-gradient(ellipse 55% 45% at 6% -8%, rgba(34,197,94,0.30) 0%, transparent 62%),
+            radial-gradient(ellipse 55% 50% at 102% -4%, rgba(45,212,191,0.26) 0%, transparent 58%),
+            linear-gradient(180deg, #eefaf1 0%, #e2f4ea 45%, #edf8f0 100%);}
+        @keyframes fadeUp{from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:translateY(0);}}
+        .anim{animation:fadeUp .6s cubic-bezier(.22,.61,.36,1) both;}
+
+        .topbar{background:var(--glass-bg-strong); backdrop-filter:blur(18px); border-bottom:1px solid var(--glass-border); padding:14px 0; position:sticky; top:0; z-index:100;}
+        .topbar-row{display:flex; align-items:center; gap:6px; overflow-x:auto; scrollbar-width:none;}
+        .brandmark{display:flex; align-items:center; gap:10px; margin-right:18px; font-family:'Space Grotesk',sans-serif; font-weight:700;}
+        .navlink{display:flex; align-items:center; gap:7px; padding:9px 14px; font-size:13.5px; font-weight:600; color:var(--ink-soft); border-radius:8px; white-space:nowrap;}
+        .navlink:hover{background:var(--green-050); color:var(--green-700);}
+        .navlink.active{background:var(--green-700); color:#fff;}
+        .nav-spacer{flex:1;}
+        .navlink.logout{color:var(--red); margin-left:auto;}
+
+        .page-head{padding:34px 0 6px;}
+        .eyebrow{display:inline-flex; align-items:center; gap:8px; font-family:'IBM Plex Mono',monospace; font-size:11.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--green-700); padding:6px 12px; border:1px dashed var(--line-strong); background:var(--green-050);}
+        .eyebrow::before{content:""; width:6px; height:6px; background:var(--green-500); border-radius:50%;}
+        .page-head h1{font-size:28px; margin-top:10px;}
+        .page-head p{color:var(--ink-soft); margin-top:6px; font-size:14.5px;}
+
+        .stats{display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin:24px 0;}
+        @media(max-width:768px){.stats{grid-template-columns:repeat(2,1fr);}}
+        .stat{padding:20px; border-radius:16px; background:var(--glass-bg); backdrop-filter:blur(18px); border:1px solid var(--glass-border); box-shadow:var(--glass-shadow);}
+        .stat .val{font-family:'Space Grotesk',sans-serif; font-size:30px; font-weight:700; color:var(--green-700);}
+        .stat .lbl{font-size:11.5px; color:var(--ink-soft); margin-top:4px; font-family:'IBM Plex Mono',monospace; text-transform:uppercase; letter-spacing:.06em;}
+        .stat.warn .val{color:var(--amber);}
+        .stat.info .val{color:var(--blue);}
+        .stat.done .val{color:#27ae60;}
+
+        .card{padding:24px; border-radius:16px; background:var(--glass-bg); backdrop-filter:blur(18px); border:1px solid var(--glass-border); box-shadow:var(--glass-shadow); margin-bottom:40px;}
+        .card h3{font-size:16px; margin-bottom:18px;}
+
+        .booking{padding:20px; border-radius:12px; background:rgba(255,255,255,0.7); border:1px solid var(--line); margin-bottom:14px; transition:all .25s;}
+        .booking:hover{border-color:var(--green-600);}
+        .booking-head{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:12px; padding-bottom:12px; border-bottom:1px dashed var(--line);}
+        .booking-head h4{font-size:16px; margin-bottom:4px;}
+        .booking-head .meta{font-size:12px; color:var(--ink-faint); font-family:'IBM Plex Mono',monospace;}
+        .booking-body{display:grid; grid-template-columns:1fr 1fr; gap:8px 24px; font-size:13px; color:var(--ink-soft); margin-bottom:14px;}
+        .booking-body strong{color:var(--ink);}
+        .badge{display:inline-block; padding:4px 12px; border-radius:20px; font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em;}
+        .badge-booked{background:#fef9e7; color:var(--amber);}
+        .badge-in_progress{background:#dbeafe; color:var(--blue);}
+        .badge-completed{background:#d5f5e3; color:#27ae60;}
+        .badge-cancelled{background:#fadbd8; color:var(--red);}
+
+        .actions{display:flex; gap:10px; flex-wrap:wrap;}
+        .btn{font-family:'Inter',sans-serif; font-weight:600; font-size:12.5px; cursor:pointer; border:none; padding:9px 16px; border-radius:8px; display:inline-flex; align-items:center; gap:6px; text-decoration:none; transition:all .2s;}
+        .btn-start{background:var(--blue); color:#fff;}
+        .btn-start:hover{background:#1c5e8a;}
+        .btn-complete{background:#27ae60; color:#fff;}
+        .btn-complete:hover{background:#1f8b4c;}
+        .btn-cancel{background:transparent; color:var(--red); border:1.5px solid #f6c6c1;}
+        .btn-cancel:hover{background:#fdecea;}
+        .btn-maint{background:var(--green-700); color:#fff;}
+        .btn-maint:hover{background:var(--green-900);}
+
+        .empty{text-align:center; padding:50px 20px; color:var(--ink-faint);}
+        .empty .icon{font-size:56px; margin-bottom:12px; opacity:.6;}
+
+        /* Maintenance modal */
+        .modal-overlay{position:fixed; inset:0; background:rgba(13,30,23,0.55); display:none; align-items:center; justify-content:center; z-index:1000; padding:20px;}
+        .modal-overlay.open{display:flex;}
+        .modal{background:#fff; border-radius:16px; padding:28px; max-width:480px; width:100%; max-height:90vh; overflow-y:auto;}
+        .modal h3{font-size:18px; margin-bottom:16px;}
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <div class="wrap topbar-row">
+        <div class="brandmark">🔧 PartMatch · Service Center</div>
+        <a href="{{ url_for('service_center_dashboard') }}" class="navlink active">🏠 Dashboard</a>
+        <a href="{{ url_for('service_center_profile') }}" class="navlink">👤 Profile</a>
+        <div class="nav-spacer"></div>
+        <a href="{{ url_for('logout') }}" class="navlink logout">🚪 Logout</a>
+    </div>
+</div>
+
+<div class="wrap">
+    <div class="page-head anim">
+        <span class="eyebrow">Service Center</span>
+        <h1>Welcome, {{ center.center_name or session.get('user_name') }} 👋</h1>
+        <p>Manage your bookings and add maintenance records.</p>
+    </div>
+
+    <div class="stats">
+        <div class="stat"><div class="val">{{ total_bookings }}</div><div class="lbl">Total Bookings</div></div>
+        <div class="stat warn"><div class="val">{{ pending_bookings }}</div><div class="lbl">Pending</div></div>
+        <div class="stat info"><div class="val">{{ in_progress }}</div><div class="lbl">In Progress</div></div>
+        <div class="stat done"><div class="val">{{ completed }}</div><div class="lbl">Completed</div></div>
+    </div>
+
+    <div class="card anim">
+        <h3>📅 All Bookings</h3>
+        {% for b in bookings %}
+        <div class="booking">
+            <div class="booking-head">
+                <div>
+                    <h4>{{ b.customer_name }} — {{ b.make }} {{ b.model }}</h4>
+                    <div class="meta">Booking #{{ b.id }} · {{ b.booking_date }} · {{ b.time_slot }}</div>
+                </div>
+                <span class="badge badge-{{ b.status }}">{{ b.status.replace('_', ' ') }}</span>
+            </div>
+            <div class="booking-body">
+                <div><strong>Phone:</strong> {{ b.customer_phone or 'N/A' }}</div>
+                <div><strong>Vehicle:</strong> {{ b.year or b.vehicle_year }} · {{ b.fuel_type }}</div>
+                <div><strong>Reg No:</strong> {{ b.registration_number or 'N/A' }}</div>
+                <div><strong>Service:</strong> {{ b.service_type or 'General' }}</div>
+                {% if b.notes %}
+                <div style="grid-column:1/-1;"><strong>Notes:</strong> {{ b.notes }}</div>
+                {% endif %}
+            </div>
+            <div class="actions">
+                {% if b.status == 'booked' %}
+                <a href="{{ url_for('service_center_booking_action', booking_id=b.id, action='start') }}" class="btn btn-start">▶ Start Service</a>
+                <a href="{{ url_for('service_center_booking_action', booking_id=b.id, action='cancel') }}" class="btn btn-cancel" onclick="return confirm('Cancel this booking?')">✕ Cancel</a>
+                {% elif b.status == 'in_progress' %}
+                <button type="button" class="btn btn-maint" onclick="openMaintModal({{ b.id }})">✅ Add Maintenance & Complete</button>
+                {% elif b.status == 'completed' %}
+                <span style="font-size:12.5px; color:#27ae60; font-weight:600;">✓ Service completed</span>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <div class="empty">
+            <div class="icon">📭</div>
+            <h4 style="font-size:16px; margin-bottom:6px;">No bookings yet</h4>
+            <p>Customer bookings will appear here once they schedule a service with you.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Maintenance Modal -->
+<div class="modal-overlay" id="maintModal">
+    <div class="modal">
+        <h3>🛠️ Add Maintenance Record</h3>
+        <form method="POST" id="maintForm">
+            <div class="field" style="margin-bottom:12px;">
+                <label style="display:block; font-size:13px; font-weight:600; margin-bottom:6px;">Service Type *</label>
+                <input type="text" name="service_type" required style="width:100%; padding:11px 14px; border:1.5px solid var(--line-strong); border-radius:10px; font-family:inherit;">
+            </div>
+            <div class="field" style="margin-bottom:12px;">
+                <label style="display:block; font-size:13px; font-weight:600; margin-bottom:6px;">Description</label>
+                <textarea name="description" rows="2" style="width:100%; padding:11px 14px; border:1.5px solid var(--line-strong); border-radius:10px; font-family:inherit;"></textarea>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+                <div>
+                    <label style="display:block; font-size:13px; font-weight:600; margin-bottom:6px;">Mileage (km)</label>
+                    <input type="number" name="mileage_km" style="width:100%; padding:11px 14px; border:1.5px solid var(--line-strong); border-radius:10px; font-family:inherit;">
+                </div>
+                <div>
+                    <label style="display:block; font-size:13px; font-weight:600; margin-bottom:6px;">Cost (₹)</label>
+                    <input type="number" name="cost" step="0.01" style="width:100%; padding:11px 14px; border:1.5px solid var(--line-strong); border-radius:10px; font-family:inherit;">
+                </div>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:18px;">
+                <div>
+                    <label style="display:block; font-size:13px; font-weight:600; margin-bottom:6px;">Next Due Date</label>
+                    <input type="date" name="next_due_date" style="width:100%; padding:11px 14px; border:1.5px solid var(--line-strong); border-radius:10px; font-family:inherit;">
+                </div>
+                <div>
+                    <label style="display:block; font-size:13px; font-weight:600; margin-bottom:6px;">Next Due (km)</label>
+                    <input type="number" name="next_due_mileage_km" style="width:100%; padding:11px 14px; border:1.5px solid var(--line-strong); border-radius:10px; font-family:inherit;">
+                </div>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button type="submit" class="btn btn-maint" style="flex:1; padding:12px;">Save & Complete</button>
+                <button type="button" class="btn btn-cancel" style="padding:12px 20px;" onclick="closeMaintModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openMaintModal(bookingId) {
+    document.getElementById('maintForm').action = '/service_center/booking/' + bookingId + '/add-maintenance';
+    document.getElementById('maintModal').classList.add('open');
+}
+function closeMaintModal() {
+    document.getElementById('maintModal').classList.remove('open');
+}
+document.getElementById('maintModal').addEventListener('click', function(e) {
+    if (e.target === this) closeMaintModal();
+});
+</script>
+
+</body>
+</html>
