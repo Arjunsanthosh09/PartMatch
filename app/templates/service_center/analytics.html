@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics — PartMatch Service Center</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root{--ink:#0f1e17; --ink-soft:#4c5f56; --ink-faint:#8a9992; --green-900:#0d3b2c; --green-700:#146c43; --green-600:#178a4c; --green-500:#1fa85a; --green-050:#eefbf1; --line:#d9e9dd; --line-strong:#b8d4c0; --red:#e74c3c; --amber:#e67e22; --blue:#2980b9; --glass-bg:rgba(255,255,255,0.5); --glass-bg-strong:rgba(255,255,255,0.72); --glass-border:rgba(255,255,255,0.8); --glass-shadow:0 8px 32px -8px rgba(13,59,44,0.2);}
+        *{box-sizing:border-box; margin:0; padding:0;}
+        body{font-family:'Inter',sans-serif; color:var(--ink); min-height:100vh;}
+        h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif;}
+        .wrap{max-width:1280px; margin:0 auto; padding:0 32px;}
+        a{color:inherit; text-decoration:none;}
+        body::before{content:""; position:fixed; inset:0; z-index:-3; background: radial-gradient(ellipse 55% 45% at 6% -8%, rgba(34,197,94,0.30) 0%, transparent 62%), linear-gradient(180deg, #eefaf1 0%, #e2f4ea 45%, #edf8f0 100%);}
+        @keyframes fadeUp{from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:translateY(0);}}
+        .anim{animation:fadeUp .6s cubic-bezier(.22,.61,.36,1) both;}
+        .topbar{background:var(--glass-bg-strong); backdrop-filter:blur(18px); border-bottom:1px solid var(--glass-border); padding:14px 0; position:sticky; top:0; z-index:100;}
+        .topbar-row{display:flex; align-items:center; gap:6px; overflow-x:auto; scrollbar-width:none;}
+        .topbar-row::-webkit-scrollbar{display:none;}
+        .brandmark{display:flex; align-items:center; gap:10px; margin-right:18px; font-family:'Space Grotesk',sans-serif; font-weight:700; flex-shrink:0;}
+        .navlink{display:flex; align-items:center; gap:7px; padding:9px 14px; font-size:13.5px; font-weight:600; color:var(--ink-soft); border-radius:8px; white-space:nowrap; flex-shrink:0;}
+        .navlink:hover{background:var(--green-050); color:var(--green-700);}
+        .navlink.active{background:var(--green-700); color:#fff;}
+        .nav-spacer{flex:1;}
+        .navlink.logout{color:var(--red); margin-left:auto;}
+
+        .page-head{padding:34px 0 20px;}
+        .eyebrow{display:inline-flex; align-items:center; gap:8px; font-family:'IBM Plex Mono',monospace; font-size:11.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--green-700); padding:6px 12px; border:1px dashed var(--line-strong); background:var(--green-050);}
+        .eyebrow::before{content:""; width:6px; height:6px; background:var(--green-500); border-radius:50%;}
+        .page-head h1{font-size:28px; margin-top:10px;}
+        .page-head p{color:var(--ink-soft); margin-top:6px; font-size:14.5px;}
+
+        .stats{display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin:24px 0;}
+        @media(max-width:768px){.stats{grid-template-columns:1fr;}}
+        .stat{padding:24px; border-radius:16px; background:var(--glass-bg); backdrop-filter:blur(18px); border:1px solid var(--glass-border); box-shadow:var(--glass-shadow);}
+        .stat .val{font-family:'Space Grotesk',sans-serif; font-size:32px; font-weight:700; color:var(--green-700);}
+        .stat .lbl{font-size:11.5px; color:var(--ink-soft); margin-top:4px; font-family:'IBM Plex Mono',monospace; text-transform:uppercase; letter-spacing:.06em;}
+
+        .card{padding:24px; border-radius:16px; background:var(--glass-bg); backdrop-filter:blur(18px); border:1px solid var(--glass-border); box-shadow:var(--glass-shadow); margin-bottom:24px;}
+        .card h3{font-size:16px; margin-bottom:20px;}
+
+        /* Bar chart */
+        .chart{display:flex; align-items:flex-end; gap:10px; height:220px; padding:10px 0; border-bottom:2px solid var(--line);}
+        .bar-wrap{flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; min-width:0; height:100%; justify-content:flex-end;}
+        .bar{width:100%; max-width:60px; background:linear-gradient(180deg, var(--green-500), var(--green-900)); border-radius:6px 6px 0 0; min-height:4px; transition:all .4s ease; position:relative;}
+        .bar:hover{opacity:.85;}
+        .bar-value{position:absolute; top:-22px; left:50%; transform:translateX(-50%); font-size:11px; font-weight:700; color:var(--green-700); font-family:'IBM Plex Mono',monospace; white-space:nowrap;}
+        .bar-label{font-size:10.5px; color:var(--ink-faint); font-family:'IBM Plex Mono',monospace; text-align:center;}
+
+        /* Service type list */
+        .service-row{display:flex; align-items:center; gap:14px; padding:12px 0; border-bottom:1px solid var(--line); font-size:13.5px;}
+        .service-row:last-child{border-bottom:none;}
+        .service-name{flex:1; font-weight:600;}
+        .service-count{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--ink-faint);}
+        .service-revenue{font-weight:700; color:var(--green-700); font-family:'Space Grotesk',sans-serif;}
+
+        /* Recent table */
+        table{width:100%; border-collapse:collapse; font-size:13px;}
+        table th{text-align:left; padding:10px 8px; font-family:'IBM Plex Mono',monospace; font-size:10.5px; text-transform:uppercase; color:var(--ink-faint); border-bottom:2px solid var(--line);}
+        table td{padding:12px 8px; border-bottom:1px solid var(--line);}
+        table tbody tr:last-child td{border-bottom:none;}
+
+        .empty{text-align:center; padding:40px 20px; color:var(--ink-faint);}
+        .empty .icon{font-size:48px; margin-bottom:12px; opacity:.6;}
+    </style>
+</head>
+<body>
+
+<div class="topbar anim">
+    <div class="wrap topbar-row">
+        <div class="brandmark">🔧 PartMatch · Service Center</div>
+        <a href="{{ url_for('service_center_dashboard') }}" class="navlink">🏠 Dashboard</a>
+        <a href="{{ url_for('service_center_reviews') }}" class="navlink">⭐ Reviews</a>
+        <a href="{{ url_for('service_center_maintenance') }}" class="navlink">🛠️ Maintenance</a>
+        <a href="{{ url_for('service_center_analytics') }}" class="navlink active">📊 Analytics</a>
+        <a href="{{ url_for('service_center_profile') }}" class="navlink">👤 Profile</a>
+        <div class="nav-spacer"></div>
+        <a href="{{ url_for('logout') }}" class="navlink logout">🚪 Logout</a>
+    </div>
+</div>
+
+<div class="wrap">
+    <div class="page-head anim">
+        <span class="eyebrow">Analytics</span>
+        <h1>Your Business Performance</h1>
+        <p>Insights into your workshop's services and revenue.</p>
+    </div>
+
+    <div class="stats">
+        <div class="stat anim">
+            <div class="val">{{ overall.total_services }}</div>
+            <div class="lbl">Total Services</div>
+        </div>
+        <div class="stat anim">
+            <div class="val">₹{{ '%.0f'|format(overall.total_revenue) }}</div>
+            <div class="lbl">Total Revenue</div>
+        </div>
+        <div class="stat anim">
+            <div class="val">₹{{ '%.0f'|format(overall.avg_cost) }}</div>
+            <div class="lbl">Avg. Service Cost</div>
+        </div>
+    </div>
+
+    <!-- Monthly Revenue Chart -->
+    {% if monthly %}
+    <div class="card anim">
+        <h3>📈 Monthly Revenue (Last 6 Months)</h3>
+        <div class="chart">
+            {% set max_rev = monthly|map(attribute='revenue')|max %}
+            {% for m in monthly %}
+            <div class="bar-wrap">
+                <div class="bar" style="height: {{ (m.revenue / max_rev * 100) if max_rev > 0 else 5 }}%;">
+                    <span class="bar-value">₹{{ '%.0f'|format(m.revenue) }}</span>
+                </div>
+                <div class="bar-label">{{ m.month }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Service Types -->
+    {% if service_types %}
+    <div class="card anim">
+        <h3>🔧 Popular Service Types</h3>
+        {% for st in service_types %}
+        <div class="service-row">
+            <span class="service-name">{{ st.service_type }}</span>
+            <span class="service-count">{{ st.count }}×</span>
+            <span class="service-revenue">₹{{ '%.0f'|format(st.revenue) }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Recent Completions -->
+    <div class="card anim">
+        <h3>🕒 Recent Completions</h3>
+        {% if recent %}
+        <table>
+            <thead>
+                <tr><th>Date</th><th>Customer</th><th>Vehicle</th><th>Service</th><th>Cost</th></tr>
+            </thead>
+            <tbody>
+                {% for r in recent %}
+                <tr>
+                    <td style="font-family:'IBM Plex Mono',monospace; font-size:12px;">{{ r.created_at.strftime('%d %b %Y') }}</td>
+                    <td>{{ r.customer_name }}</td>
+                    <td>{{ r.make }} {{ r.model }}</td>
+                    <td>{{ r.service_type or 'Service' }}</td>
+                    <td style="font-weight:700; color:var(--green-700);">₹{{ '%.0f'|format(r.cost) if r.cost else '—' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty">
+            <div class="icon">📊</div>
+            <p>No completed services yet. Complete a booking to see analytics here.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maintenance History — PartMatch Service Center</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root{--ink:#0f1e17; --ink-soft:#4c5f56; --ink-faint:#8a9992; --green-900:#0d3b2c; --green-700:#146c43; --green-600:#178a4c; --green-500:#1fa85a; --green-050:#eefbf1; --line:#d9e9dd; --line-strong:#b8d4c0; --red:#e74c3c; --amber:#e67e22; --glass-bg:rgba(255,255,255,0.5); --glass-bg-strong:rgba(255,255,255,0.72); --glass-border:rgba(255,255,255,0.8); --glass-shadow:0 8px 32px -8px rgba(13,59,44,0.2);}
+        *{box-sizing:border-box; margin:0; padding:0;}
+        body{font-family:'Inter',sans-serif; color:var(--ink); min-height:100vh;}
+        h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif;}
+        .wrap{max-width:1280px; margin:0 auto; padding:0 32px;}
+        a{color:inherit; text-decoration:none;}
+        body::before{content:""; position:fixed; inset:0; z-index:-3; background: radial-gradient(ellipse 55% 45% at 6% -8%, rgba(34,197,94,0.30) 0%, transparent 62%), linear-gradient(180deg, #eefaf1 0%, #e2f4ea 45%, #edf8f0 100%);}
+        @keyframes fadeUp{from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:translateY(0);}}
+        .anim{animation:fadeUp .6s cubic-bezier(.22,.61,.36,1) both;}
+        .topbar{background:var(--glass-bg-strong); backdrop-filter:blur(18px); border-bottom:1px solid var(--glass-border); padding:14px 0; position:sticky; top:0; z-index:100;}
+        .topbar-row{display:flex; align-items:center; gap:6px; overflow-x:auto; scrollbar-width:none;}
+        .topbar-row::-webkit-scrollbar{display:none;}
+        .brandmark{display:flex; align-items:center; gap:10px; margin-right:18px; font-family:'Space Grotesk',sans-serif; font-weight:700; flex-shrink:0;}
+        .navlink{display:flex; align-items:center; gap:7px; padding:9px 14px; font-size:13.5px; font-weight:600; color:var(--ink-soft); border-radius:8px; white-space:nowrap; flex-shrink:0;}
+        .navlink:hover{background:var(--green-050); color:var(--green-700);}
+        .navlink.active{background:var(--green-700); color:#fff;}
+        .nav-spacer{flex:1;}
+        .navlink.logout{color:var(--red); margin-left:auto;}
+
+        .page-head{padding:34px 0 20px;}
+        .eyebrow{display:inline-flex; align-items:center; gap:8px; font-family:'IBM Plex Mono',monospace; font-size:11.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--green-700); padding:6px 12px; border:1px dashed var(--line-strong); background:var(--green-050);}
+        .eyebrow::before{content:""; width:6px; height:6px; background:var(--green-500); border-radius:50%;}
+        .page-head h1{font-size:28px; margin-top:10px;}
+
+        .stats{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:24px 0;}
+        @media(max-width:600px){.stats{grid-template-columns:1fr;}}
+        .stat{padding:24px; border-radius:16px; background:var(--glass-bg); backdrop-filter:blur(18px); border:1px solid var(--glass-border); box-shadow:var(--glass-shadow);}
+        .stat .val{font-family:'Space Grotesk',sans-serif; font-size:34px; font-weight:700; color:var(--green-700);}
+        .stat .lbl{font-size:12px; color:var(--ink-soft); margin-top:4px; font-family:'IBM Plex Mono',monospace; text-transform:uppercase; letter-spacing:.06em;}
+
+        .card{padding:24px; border-radius:16px; background:var(--glass-bg); backdrop-filter:blur(18px); border:1px solid var(--glass-border); box-shadow:var(--glass-shadow); margin-bottom:24px;}
+        .card h3{font-size:16px; margin-bottom:18px;}
+
+        .filter-bar{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px;}
+        .chip{padding:8px 16px; border-radius:20px; border:1px solid var(--line-strong); background:rgba(255,255,255,0.5); font-size:12.5px; font-weight:600; color:var(--ink-soft); transition:all .2s;}
+        .chip:hover{border-color:var(--green-600); color:var(--green-700);}
+        .chip.active{background:var(--green-700); border-color:var(--green-700); color:#fff;}
+
+        .record{padding:18px; background:rgba(255,255,255,0.7); border-radius:12px; border:1px solid var(--line); margin-bottom:12px; transition:all .25s;}
+        .record:hover{border-color:var(--green-600);}
+        .record-head{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:10px;}
+        .record-head h4{font-size:15px; margin-bottom:4px;}
+        .record-head .meta{font-size:11.5px; color:var(--ink-faint); font-family:'IBM Plex Mono',monospace;}
+        .record-head .cost{font-family:'Space Grotesk',sans-serif; font-size:20px; font-weight:700; color:var(--green-700);}
+        .record-body{display:grid; grid-template-columns:1fr 1fr; gap:6px 20px; font-size:13px; color:var(--ink-soft);}
+        @media(max-width:600px){.record-body{grid-template-columns:1fr;}}
+        .record-body strong{color:var(--ink);}
+
+        .empty{text-align:center; padding:60px 20px; color:var(--ink-faint);}
+        .empty .icon{font-size:56px; margin-bottom:14px; opacity:.6;}
+    </style>
+</head>
+<body>
+
+<div class="topbar anim">
+    <div class="wrap topbar-row">
+        <div class="brandmark">🔧 PartMatch · Service Center</div>
+        <a href="{{ url_for('service_center_dashboard') }}" class="navlink">🏠 Dashboard</a>
+        <a href="{{ url_for('service_center_reviews') }}" class="navlink">⭐ Reviews</a>
+        <a href="{{ url_for('service_center_maintenance') }}" class="navlink active">🛠️ Maintenance</a>
+        <a href="{{ url_for('service_center_analytics') }}" class="navlink">📊 Analytics</a>
+        <a href="{{ url_for('service_center_profile') }}" class="navlink">👤 Profile</a>
+        <div class="nav-spacer"></div>
+        <a href="{{ url_for('logout') }}" class="navlink logout">🚪 Logout</a>
+    </div>
+</div>
+
+<div class="wrap">
+    <div class="page-head anim">
+        <span class="eyebrow">Maintenance History</span>
+        <h1>Records You've Created</h1>
+        <p>All vehicle services logged by your workshop.</p>
+    </div>
+
+    <div class="stats">
+        <div class="stat anim">
+            <div class="val">{{ stats.total }}</div>
+            <div class="lbl">Total Services</div>
+        </div>
+        <div class="stat anim">
+            <div class="val">₹{{ '%.0f'|format(stats.total_revenue) }}</div>
+            <div class="lbl">Total Revenue</div>
+        </div>
+    </div>
+
+    <div class="card anim">
+        <h3>🛠️ Service Records</h3>
+        
+        {% if available_months %}
+        <div class="filter-bar">
+            <a href="{{ url_for('service_center_maintenance', month='all') }}" class="chip {% if month_filter == 'all' %}active{% endif %}">All Time</a>
+            {% for m in available_months %}
+            <a href="{{ url_for('service_center_maintenance', month=m.month) }}" class="chip {% if month_filter == m.month %}active{% endif %}">{{ m.month }}</a>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% for r in records %}
+        <div class="record">
+            <div class="record-head">
+                <div>
+                    <h4>{{ r.service_type or 'Service' }} — {{ r.make }} {{ r.model }}</h4>
+                    <div class="meta">{{ r.created_at.strftime('%d %b %Y · %I:%M %p') }} · Reg: {{ r.registration_number or 'N/A' }}</div>
+                </div>
+                {% if r.cost %}
+                <div class="cost">₹{{ '%.0f'|format(r.cost) }}</div>
+                {% endif %}
+            </div>
+            <div class="record-body">
+                <div><strong>Customer:</strong> {{ r.customer_name }}</div>
+                <div><strong>Phone:</strong> {{ r.customer_phone or 'N/A' }}</div>
+                {% if r.mileage_km %}<div><strong>Mileage:</strong> {{ r.mileage_km }} km</div>{% endif %}
+                {% if r.next_due_date %}<div><strong>Next Due:</strong> {{ r.next_due_date }}</div>{% endif %}
+                {% if r.description %}
+                <div style="grid-column:1/-1;"><strong>Description:</strong> {{ r.description }}</div>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <div class="empty">
+            <div class="icon">🛠️</div>
+            <h3 style="margin-bottom:8px;">No maintenance records yet</h3>
+            <p>When you complete a booking and add a maintenance record, it will appear here.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+</body>
+</html>

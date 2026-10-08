@@ -295,7 +295,51 @@
         </div>
         <div class="total-line">
           <span>Total</span>
-          <span>₹{{ '%.0f'|format(order.total_amount) }}</span>
+          <div style="display: flex; align-items: center; gap: 12px">
+            <span>₹{{ '%.0f'|format(order.total_amount) }}</span>
+            <a
+              href="{{ url_for('customer_invoice', order_id=order.id) }}"
+              style="
+                font-family: &quot;Inter&quot;, sans-serif;
+                font-size: 12.5px;
+                font-weight: 600;
+                padding: 8px 16px;
+                background: var(--green-700);
+                color: #fff;
+                border-radius: 8px;
+                text-decoration: none;
+              "
+            >
+              📄 Invoice
+            </a>
+            {% if order.order_status in ('pending', 'confirmed') %}
+            <form
+              method="POST"
+              action="{{ url_for('customer_cancel_order', order_id=order.id) }}"
+              style="display: inline"
+              onsubmit="
+                return confirm('Cancel this order? Stock will be restored.');
+              "
+            >
+              <button
+                type="submit"
+                style="
+                  font-family: &quot;Inter&quot;, sans-serif;
+                  font-size: 12.5px;
+                  font-weight: 600;
+                  padding: 8px 16px;
+                  background: transparent;
+                  color: #e74c3c;
+                  border: 1.5px solid #f6c6c1;
+                  border-radius: 8px;
+                  cursor: pointer;
+                "
+              >
+                ✕ Cancel
+              </button>
+            </form>
+            {% endif %}
+          </div>
         </div>
       </div>
       {% endfor %} {% else %}

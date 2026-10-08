@@ -1,371 +1,1081 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Customer Dashboard — PartMatch</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
     <style>
-        :root{
-          --white:#ffffff;
-          --bg-soft:#f4faf5;
-          --ink:#0f1e17;
-          --ink-soft:#4c5f56;
-          --ink-faint:#8a9992;
-          --green-900:#0d3b2c;
-          --green-700:#146c43;
-          --green-600:#178a4c;
-          --green-500:#1fa85a;
-          --green-100:#dcf5e3;
-          --green-050:#eefbf1;
-          --line:#d9e9dd;
-          --line-strong:#b8d4c0;
-          --amber:#e67e22;
-          --red:#e74c3c;
-          --blue:#2980b9;
-          --glass-bg:rgba(255,255,255,0.5);
-          --glass-bg-strong:rgba(255,255,255,0.72);
-          --glass-border:rgba(255,255,255,0.8);
-          --glass-shadow:0 8px 32px -8px rgba(13,59,44,0.2);
+      :root {
+        --white: #ffffff;
+        --bg-soft: #f4faf5;
+        --ink: #0f1e17;
+        --ink-soft: #4c5f56;
+        --ink-faint: #8a9992;
+        --green-900: #0d3b2c;
+        --green-700: #146c43;
+        --green-600: #178a4c;
+        --green-500: #1fa85a;
+        --green-100: #dcf5e3;
+        --green-050: #eefbf1;
+        --line: #d9e9dd;
+        --line-strong: #b8d4c0;
+        --amber: #e67e22;
+        --red: #e74c3c;
+        --blue: #2980b9;
+        --glass-bg: rgba(255, 255, 255, 0.5);
+        --glass-bg-strong: rgba(255, 255, 255, 0.72);
+        --glass-border: rgba(255, 255, 255, 0.8);
+        --glass-shadow: 0 8px 32px -8px rgba(13, 59, 44, 0.2);
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        font-family: "Inter", sans-serif;
+        color: var(--ink);
+        min-height: 100vh;
+        position: relative;
+        -webkit-font-smoothing: antialiased;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        font-family: "Space Grotesk", sans-serif;
+        letter-spacing: -0.01em;
+      }
+      .mono {
+        font-family: "IBM Plex Mono", monospace;
+      }
+      .wrap {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 0 32px;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      /* ============ AMBIENT BACKGROUND ============ */
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: -3;
+        background:
+          radial-gradient(
+            ellipse 55% 45% at 6% -8%,
+            rgba(34, 197, 94, 0.3) 0%,
+            transparent 62%
+          ),
+          radial-gradient(
+            ellipse 55% 50% at 102% -4%,
+            rgba(45, 212, 191, 0.26) 0%,
+            transparent 58%
+          ),
+          radial-gradient(
+            ellipse 60% 55% at 50% 115%,
+            rgba(251, 191, 36, 0.16) 0%,
+            transparent 60%
+          ),
+          linear-gradient(180deg, #eefaf1 0%, #e2f4ea 45%, #edf8f0 100%);
+      }
+      body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: -2;
+        opacity: 0.5;
+        pointer-events: none;
+        background-image:
+          linear-gradient(var(--line) 1px, transparent 1px),
+          linear-gradient(90deg, var(--line) 1px, transparent 1px);
+        background-size: 56px 56px;
+        mask-image: radial-gradient(
+          ellipse 80% 60% at 50% 0%,
+          #000 30%,
+          transparent 85%
+        );
+      }
+      .blob {
+        position: fixed;
+        z-index: -1;
+        border-radius: 50%;
+        filter: blur(64px);
+        opacity: 0.75;
+        pointer-events: none;
+        animation: blobFloat 14s ease-in-out infinite;
+      }
+      .blob-a {
+        width: 460px;
+        height: 460px;
+        background: radial-gradient(circle, #7fe0a3, transparent 70%);
+        top: -140px;
+        right: -100px;
+      }
+      .blob-b {
+        width: 380px;
+        height: 380px;
+        background: radial-gradient(circle, #6fe3d6, transparent 70%);
+        bottom: 6%;
+        left: -120px;
+        animation-delay: 3s;
+      }
+      .blob-c {
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle, #f6d38a, transparent 70%);
+        bottom: -70px;
+        right: 22%;
+        animation-delay: 6s;
+      }
+      @keyframes blobFloat {
+        0%,
+        100% {
+          transform: translate(0, 0) scale(1);
         }
-        *{box-sizing:border-box; margin:0; padding:0;}
-        html{scroll-behavior:smooth;}
-        body{
-          font-family:'Inter',sans-serif;
-          color:var(--ink);
-          min-height:100vh;
-          position:relative;
-          -webkit-font-smoothing:antialiased;
+        50% {
+          transform: translate(24px, -22px) scale(1.06);
         }
-        h1,h2,h3,h4{font-family:'Space Grotesk',sans-serif; letter-spacing:-0.01em;}
-        .mono{font-family:'IBM Plex Mono',monospace;}
-        .wrap{max-width:1280px; margin:0 auto; padding:0 32px;}
-        a{color:inherit; text-decoration:none;}
+      }
 
-        /* ============ AMBIENT BACKGROUND ============ */
-        body::before{
-          content:""; position:fixed; inset:0; z-index:-3;
-          background:
-            radial-gradient(ellipse 55% 45% at 6% -8%, rgba(34,197,94,0.30) 0%, transparent 62%),
-            radial-gradient(ellipse 55% 50% at 102% -4%, rgba(45,212,191,0.26) 0%, transparent 58%),
-            radial-gradient(ellipse 60% 55% at 50% 115%, rgba(251,191,36,0.16) 0%, transparent 60%),
-            linear-gradient(180deg, #eefaf1 0%, #e2f4ea 45%, #edf8f0 100%);
+      /* ============ ENTRANCE ============ */
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(16px);
         }
-        body::after{
-          content:""; position:fixed; inset:0; z-index:-2; opacity:.5; pointer-events:none;
-          background-image:
-            linear-gradient(var(--line) 1px, transparent 1px),
-            linear-gradient(90deg, var(--line) 1px, transparent 1px);
-          background-size:56px 56px;
-          mask-image:radial-gradient(ellipse 80% 60% at 50% 0%, #000 30%, transparent 85%);
+        to {
+          opacity: 1;
+          transform: translateY(0);
         }
-        .blob{position:fixed; z-index:-1; border-radius:50%; filter:blur(64px); opacity:.75; pointer-events:none; animation:blobFloat 14s ease-in-out infinite;}
-        .blob-a{width:460px; height:460px; background:radial-gradient(circle,#7fe0a3,transparent 70%); top:-140px; right:-100px;}
-        .blob-b{width:380px; height:380px; background:radial-gradient(circle,#6fe3d6,transparent 70%); bottom:6%; left:-120px; animation-delay:3s;}
-        .blob-c{width:300px; height:300px; background:radial-gradient(circle,#f6d38a,transparent 70%); bottom:-70px; right:22%; animation-delay:6s;}
-        @keyframes blobFloat{0%,100%{transform:translate(0,0) scale(1);} 50%{transform:translate(24px,-22px) scale(1.06);}}
+      }
+      .anim {
+        animation: fadeUp 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+      }
+      .d1 {
+        animation-delay: 0.02s;
+      }
+      .d2 {
+        animation-delay: 0.08s;
+      }
+      .d3 {
+        animation-delay: 0.14s;
+      }
+      .d4 {
+        animation-delay: 0.2s;
+      }
+      .d5 {
+        animation-delay: 0.26s;
+      }
+      .d6 {
+        animation-delay: 0.32s;
+      }
 
-        /* ============ ENTRANCE ============ */
-        @keyframes fadeUp{from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:translateY(0);}}
-        .anim{animation:fadeUp .6s cubic-bezier(.22,.61,.36,1) both;}
-        .d1{animation-delay:.02s;} .d2{animation-delay:.08s;} .d3{animation-delay:.14s;}
-        .d4{animation-delay:.2s;} .d5{animation-delay:.26s;} .d6{animation-delay:.32s;}
+      /* ============ TOPBAR ============ */
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: var(--glass-bg-strong);
+        backdrop-filter: blur(18px) saturate(1.7);
+        -webkit-backdrop-filter: blur(18px) saturate(1.7);
+        border-bottom: 1px solid var(--glass-border);
+        box-shadow: 0 4px 24px -12px rgba(13, 59, 44, 0.12);
+      }
+      .topbar-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 14px 0;
+        overflow-x: auto;
+        scrollbar-width: none;
+      }
+      .topbar-row::-webkit-scrollbar {
+        display: none;
+      }
+      .brandmark {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-right: 18px;
+        flex-shrink: 0;
+      }
+      .brandmark svg {
+        width: 30px;
+        height: 30px;
+      }
+      .brandmark strong {
+        font-family: "Space Grotesk", sans-serif;
+        font-size: 17px;
+        font-weight: 700;
+      }
+      .brandmark small {
+        display: block;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 9px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--ink-faint);
+      }
 
-        /* ============ TOPBAR ============ */
-        .topbar{
-          position:sticky; top:0; z-index:100;
-          background:var(--glass-bg-strong);
-          backdrop-filter:blur(18px) saturate(1.7); -webkit-backdrop-filter:blur(18px) saturate(1.7);
-          border-bottom:1px solid var(--glass-border);
-          box-shadow:0 4px 24px -12px rgba(13,59,44,0.12);
+      .navlink {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 9px 14px;
+        font-size: 13.5px;
+        font-weight: 600;
+        color: var(--ink-soft);
+        border: 1px solid transparent;
+        border-radius: 8px;
+        white-space: nowrap;
+        transition: all 0.25s ease;
+        flex-shrink: 0;
+      }
+      .navlink svg {
+        width: 15px;
+        height: 15px;
+        flex-shrink: 0;
+      }
+      .navlink:hover {
+        background: var(--green-050);
+        color: var(--green-700);
+        border-color: var(--line);
+      }
+      .navlink.active {
+        background: var(--green-700);
+        color: #fff;
+        box-shadow: 0 4px 14px -4px rgba(20, 108, 67, 0.5);
+      }
+      .nav-spacer {
+        flex: 1;
+      }
+      .navlink.logout {
+        color: var(--red);
+        margin-left: auto;
+        flex-shrink: 0;
+      }
+      .navlink.logout:hover {
+        background: #fdecea;
+        border-color: #f6c6c1;
+      }
+      /* ==================== MAINTENANCE ALERT CARDS ==================== */
+      .alert-card {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 16px 20px;
+        border-radius: 12px;
+        margin-bottom: 10px;
+        border-left: 4px solid;
+        background: rgba(255, 255, 255, 0.7);
+        transition: all 0.25s ease;
+      }
+      .alert-card:hover {
+        transform: translateX(3px);
+        box-shadow: 0 6px 20px -8px rgba(13, 59, 44, 0.15);
+      }
+      .alert-danger {
+        border-left-color: #e74c3c;
+        background: linear-gradient(
+          90deg,
+          rgba(231, 76, 60, 0.08),
+          rgba(255, 255, 255, 0.7)
+        );
+      }
+      .alert-warning {
+        border-left-color: #e67e22;
+        background: linear-gradient(
+          90deg,
+          rgba(230, 126, 34, 0.08),
+          rgba(255, 255, 255, 0.7)
+        );
+      }
+      .alert-info {
+        border-left-color: #2980b9;
+        background: linear-gradient(
+          90deg,
+          rgba(41, 128, 185, 0.08),
+          rgba(255, 255, 255, 0.7)
+        );
+      }
+      .alert-icon {
+        font-size: 26px;
+        flex-shrink: 0;
+      }
+      .alert-body {
+        flex: 1;
+        min-width: 0;
+      }
+      .alert-title {
+        font-family: "Space Grotesk", sans-serif;
+        font-weight: 600;
+        font-size: 14.5px;
+        margin-bottom: 3px;
+        color: var(--ink);
+      }
+      .alert-message {
+        font-size: 13px;
+        color: var(--ink-soft);
+        line-height: 1.5;
+      }
+      .alert-action {
+        font-family: "Inter", sans-serif;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 8px 14px;
+        background: var(--green-700);
+        color: #fff;
+        border-radius: 8px;
+        white-space: nowrap;
+        flex-shrink: 0;
+        transition: all 0.2s ease;
+        text-decoration: none;
+      }
+      .alert-action:hover {
+        background: var(--green-900);
+        transform: translateY(-1px);
+      }
+      @media (max-width: 600px) {
+        .alert-card {
+          flex-wrap: wrap;
         }
-        .topbar-row{display:flex; align-items:center; gap:6px; padding:14px 0; overflow-x:auto; scrollbar-width:none;}
-        .topbar-row::-webkit-scrollbar{display:none;}
-        .brandmark{display:flex; align-items:center; gap:10px; margin-right:18px; flex-shrink:0;}
-        .brandmark svg{width:30px; height:30px;}
-        .brandmark strong{font-family:'Space Grotesk',sans-serif; font-size:17px; font-weight:700;}
-        .brandmark small{display:block; font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-faint);}
-
-        .navlink{
-          display:flex; align-items:center; gap:7px; padding:9px 14px; font-size:13.5px; font-weight:600;
-          color:var(--ink-soft); border:1px solid transparent; border-radius:8px; white-space:nowrap;
-          transition:all .25s ease; flex-shrink:0;
+        .alert-action {
+          width: 100%;
+          text-align: center;
         }
-        .navlink svg{width:15px; height:15px; flex-shrink:0;}
-        .navlink:hover{background:var(--green-050); color:var(--green-700); border-color:var(--line);}
-        .navlink.active{background:var(--green-700); color:#fff; box-shadow:0 4px 14px -4px rgba(20,108,67,.5);}
-        .nav-spacer{flex:1;}
-        .navlink.logout{color:var(--red); margin-left:auto; flex-shrink:0;}
-        .navlink.logout:hover{background:#fdecea; border-color:#f6c6c1;}
+      }
 
-        /* ============ PAGE HEADER ============ */
-        .page-head{padding:34px 0 6px;}
-        .eyebrow{display:inline-flex; align-items:center; gap:8px; font-family:'IBM Plex Mono',monospace; font-size:11.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--green-700); font-weight:500; padding:6px 12px; border:1px dashed var(--line-strong); background:var(--green-050);}
-        .eyebrow::before{content:""; width:6px; height:6px; background:var(--green-500); border-radius:50%; animation:pulseDot 1.8s ease-in-out infinite;}
-        @keyframes pulseDot{0%,100%{opacity:1;} 50%{opacity:.35;}}
-        .page-head h1{font-size:28px; margin-top:10px;}
-        .page-head p{color:var(--ink-soft); margin-top:6px; font-size:14.5px;}
-
-        /* ============ GLASS CARD ============ */
-        .glass{
-          background:var(--glass-bg);
-          backdrop-filter:blur(18px) saturate(1.7); -webkit-backdrop-filter:blur(18px) saturate(1.7);
-          border:1px solid var(--glass-border);
-          border-radius:16px;
-          box-shadow:var(--glass-shadow), inset 0 1px 0 rgba(255,255,255,0.8);
-          transition:transform .3s ease, box-shadow .3s ease;
+      /* ============ PAGE HEADER ============ */
+      .page-head {
+        padding: 34px 0 6px;
+      }
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 11.5px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--green-700);
+        font-weight: 500;
+        padding: 6px 12px;
+        border: 1px dashed var(--line-strong);
+        background: var(--green-050);
+      }
+      .eyebrow::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        background: var(--green-500);
+        border-radius: 50%;
+        animation: pulseDot 1.8s ease-in-out infinite;
+      }
+      @keyframes pulseDot {
+        0%,
+        100% {
+          opacity: 1;
         }
-        .glass:hover{transform:translateY(-3px); box-shadow:0 16px 40px -10px rgba(13,59,44,0.24);}
-
-        /* ============ STATS GRID ============ */
-        .stats-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin:24px 0;}
-        .stat-card{padding:20px; border-radius:16px; background:var(--glass-bg); backdrop-filter:blur(18px); border:1px solid var(--glass-border); box-shadow:var(--glass-shadow);}
-        .stat-card .stat-value{font-family:'Space Grotesk',sans-serif; font-size:28px; font-weight:700; color:var(--green-700);}
-        .stat-card .stat-label{font-size:12px; color:var(--ink-soft); margin-top:4px; font-family:'IBM Plex Mono',monospace; text-transform:uppercase; letter-spacing:.06em;}
-        .stat-card.warning .stat-value{color:var(--amber);}
-        .stat-card.success .stat-value{color:#27ae60;}
-        .stat-card.info .stat-value{color:var(--blue);}
-
-        /* ============ QUICK ACTIONS ============ */
-        .quick-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin:24px 0;}
-        .quick-card{
-          padding:24px; border-radius:16px; text-align:center; cursor:pointer;
-          background:var(--glass-bg); backdrop-filter:blur(18px); border:1px solid var(--glass-border);
-          box-shadow:var(--glass-shadow); transition:all .3s ease; color:inherit;
+        50% {
+          opacity: 0.35;
         }
-        .quick-card:hover{transform:translateY(-4px); border-color:var(--green-600); background:#fff;}
-        .quick-card .icon{font-size:32px; margin-bottom:10px;}
-        .quick-card h4{font-size:14px; margin-bottom:4px;}
-        .quick-card p{font-size:11.5px; color:var(--ink-faint);}
+      }
+      .page-head h1 {
+        font-size: 28px;
+        margin-top: 10px;
+      }
+      .page-head p {
+        color: var(--ink-soft);
+        margin-top: 6px;
+        font-size: 14.5px;
+      }
 
-        /* ============ PANELS ============ */
-        .panel-row{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:24px 0;}
-        .panel{padding:24px; border-radius:16px; background:var(--glass-bg); backdrop-filter:blur(18px); border:1px solid var(--glass-border); box-shadow:var(--glass-shadow);}
-        .panel h3{font-size:16px; margin-bottom:16px; display:flex; align-items:center; gap:8px;}
-        .panel h3 svg{width:18px; height:18px; color:var(--green-600);}
-        
-        table{width:100%; border-collapse:collapse; font-size:13px;}
-        table th{text-align:left; padding:10px 8px; border-bottom:2px solid var(--line); font-family:'IBM Plex Mono',monospace; font-size:10.5px; text-transform:uppercase; color:var(--ink-faint);}
-        table td{padding:10px 8px; border-bottom:1px solid var(--line);}
-        
-        .badge{display:inline-block; padding:3px 10px; border-radius:20px; font-size:10.5px; font-weight:600;}
-        .badge-success{background:#d5f5e3; color:#27ae60;}
-        .badge-warning{background:#fef9e7; color:#e67e22;}
-        .badge-info{background:#dbeafe; color:#2980b9;}
-        .badge-danger{background:#fadbd8; color:#e74c3c;}
-        
-        .btn{font-family:'Inter',sans-serif; font-weight:600; font-size:13px; cursor:pointer; border:none; padding:10px 18px; border-radius:8px; display:inline-flex; align-items:center; gap:6px; transition:all .25s ease; text-decoration:none;}
-        .btn-solid{background:var(--green-700); color:#fff;}
-        .btn-solid:hover{background:var(--green-900);}
-        .btn-ghost{background:transparent; color:var(--ink); border:1px solid var(--line-strong);}
-        .btn-ghost:hover{border-color:var(--green-600); color:var(--green-700);}
-        .btn-sm{padding:6px 12px; font-size:11.5px;}
+      /* ============ GLASS CARD ============ */
+      .glass {
+        background: var(--glass-bg);
+        backdrop-filter: blur(18px) saturate(1.7);
+        -webkit-backdrop-filter: blur(18px) saturate(1.7);
+        border: 1px solid var(--glass-border);
+        border-radius: 16px;
+        box-shadow:
+          var(--glass-shadow),
+          inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        transition:
+          transform 0.3s ease,
+          box-shadow 0.3s ease;
+      }
+      .glass:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 16px 40px -10px rgba(13, 59, 44, 0.24);
+      }
 
-        .empty-state{text-align:center; padding:30px; color:var(--ink-faint); font-size:13px;}
-        .empty-state .icon{font-size:36px; margin-bottom:10px;}
+      /* ============ STATS GRID ============ */
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin: 24px 0;
+      }
+      .stat-card {
+        padding: 20px;
+        border-radius: 16px;
+        background: var(--glass-bg);
+        backdrop-filter: blur(18px);
+        border: 1px solid var(--glass-border);
+        box-shadow: var(--glass-shadow);
+      }
+      .stat-card .stat-value {
+        font-family: "Space Grotesk", sans-serif;
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--green-700);
+      }
+      .stat-card .stat-label {
+        font-size: 12px;
+        color: var(--ink-soft);
+        margin-top: 4px;
+        font-family: "IBM Plex Mono", monospace;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      .stat-card.warning .stat-value {
+        color: var(--amber);
+      }
+      .stat-card.success .stat-value {
+        color: #27ae60;
+      }
+      .stat-card.info .stat-value {
+        color: var(--blue);
+      }
 
-        @media(max-width:960px){
-            .stats-grid{grid-template-columns:repeat(2,1fr);}
-            .quick-grid{grid-template-columns:repeat(2,1fr);}
-            .panel-row{grid-template-columns:1fr;}
+      /* ============ QUICK ACTIONS ============ */
+      .quick-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin: 24px 0;
+      }
+      .quick-card {
+        padding: 24px;
+        border-radius: 16px;
+        text-align: center;
+        cursor: pointer;
+        background: var(--glass-bg);
+        backdrop-filter: blur(18px);
+        border: 1px solid var(--glass-border);
+        box-shadow: var(--glass-shadow);
+        transition: all 0.3s ease;
+        color: inherit;
+      }
+      .quick-card:hover {
+        transform: translateY(-4px);
+        border-color: var(--green-600);
+        background: #fff;
+      }
+      .quick-card .icon {
+        font-size: 32px;
+        margin-bottom: 10px;
+      }
+      .quick-card h4 {
+        font-size: 14px;
+        margin-bottom: 4px;
+      }
+      .quick-card p {
+        font-size: 11.5px;
+        color: var(--ink-faint);
+      }
+
+      /* ============ PANELS ============ */
+      .panel-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin: 24px 0;
+      }
+      .panel {
+        padding: 24px;
+        border-radius: 16px;
+        background: var(--glass-bg);
+        backdrop-filter: blur(18px);
+        border: 1px solid var(--glass-border);
+        box-shadow: var(--glass-shadow);
+      }
+      .panel h3 {
+        font-size: 16px;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .panel h3 svg {
+        width: 18px;
+        height: 18px;
+        color: var(--green-600);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      table th {
+        text-align: left;
+        padding: 10px 8px;
+        border-bottom: 2px solid var(--line);
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 10.5px;
+        text-transform: uppercase;
+        color: var(--ink-faint);
+      }
+      table td {
+        padding: 10px 8px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .badge {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 10.5px;
+        font-weight: 600;
+      }
+      .badge-success {
+        background: #d5f5e3;
+        color: #27ae60;
+      }
+      .badge-warning {
+        background: #fef9e7;
+        color: #e67e22;
+      }
+      .badge-info {
+        background: #dbeafe;
+        color: #2980b9;
+      }
+      .badge-danger {
+        background: #fadbd8;
+        color: #e74c3c;
+      }
+
+      .btn {
+        font-family: "Inter", sans-serif;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        border: none;
+        padding: 10px 18px;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.25s ease;
+        text-decoration: none;
+      }
+      .btn-solid {
+        background: var(--green-700);
+        color: #fff;
+      }
+      .btn-solid:hover {
+        background: var(--green-900);
+      }
+      .btn-ghost {
+        background: transparent;
+        color: var(--ink);
+        border: 1px solid var(--line-strong);
+      }
+      .btn-ghost:hover {
+        border-color: var(--green-600);
+        color: var(--green-700);
+      }
+      .btn-sm {
+        padding: 6px 12px;
+        font-size: 11.5px;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 30px;
+        color: var(--ink-faint);
+        font-size: 13px;
+      }
+      .empty-state .icon {
+        font-size: 36px;
+        margin-bottom: 10px;
+      }
+
+      @media (max-width: 960px) {
+        .stats-grid {
+          grid-template-columns: repeat(2, 1fr);
         }
-        @media(max-width:500px){
-            .wrap{padding:0 20px;}
-            .stats-grid{grid-template-columns:1fr;}
-            .quick-grid{grid-template-columns:1fr;}
+        .quick-grid {
+          grid-template-columns: repeat(2, 1fr);
         }
+        .panel-row {
+          grid-template-columns: 1fr;
+        }
+      }
+      @media (max-width: 500px) {
+        .wrap {
+          padding: 0 20px;
+        }
+        .stats-grid {
+          grid-template-columns: 1fr;
+        }
+        .quick-grid {
+          grid-template-columns: 1fr;
+        }
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
+    <div class="blob blob-a"></div>
+    <div class="blob blob-b"></div>
+    <div class="blob blob-c"></div>
 
-<div class="blob blob-a"></div>
-<div class="blob blob-b"></div>
-<div class="blob blob-c"></div>
-
-<!-- ============ TOPBAR ============ -->
-<div class="topbar anim">
-    <div class="wrap topbar-row">
+    <!-- ============ TOPBAR ============ -->
+    <div class="topbar anim">
+      <div class="wrap topbar-row">
         <div class="brandmark">
-            <svg viewBox="0 0 40 40" fill="none">
-                <rect x="1" y="1" width="38" height="38" stroke="#178a4c" stroke-width="1.4" stroke-dasharray="3 3"/>
-                <path d="M9 24l2-7c.4-1.2 1.5-2 2.8-2h12.4c1.3 0 2.4.8 2.8 2l2 7" stroke="#0d3b2c" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M9 24h22v3.5a1.5 1.5 0 01-1.5 1.5h-1a1.5 1.5 0 01-1.5-1.5V26h-15v1.5A1.5 1.5 0 0110.5 29h-1A1.5 1.5 0 018 27.5V24z" stroke="#0d3b2c" stroke-width="1.8" stroke-linejoin="round"/>
-                <circle cx="14" cy="24" r="1.6" fill="#178a4c"/>
-                <circle cx="26" cy="24" r="1.6" fill="#178a4c"/>
-            </svg>
-            <span><strong>PartMatch</strong><small>Customer Console</small></span>
+          <svg viewBox="0 0 40 40" fill="none">
+            <rect
+              x="1"
+              y="1"
+              width="38"
+              height="38"
+              stroke="#178a4c"
+              stroke-width="1.4"
+              stroke-dasharray="3 3"
+            />
+            <path
+              d="M9 24l2-7c.4-1.2 1.5-2 2.8-2h12.4c1.3 0 2.4.8 2.8 2l2 7"
+              stroke="#0d3b2c"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M9 24h22v3.5a1.5 1.5 0 01-1.5 1.5h-1a1.5 1.5 0 01-1.5-1.5V26h-15v1.5A1.5 1.5 0 0110.5 29h-1A1.5 1.5 0 018 27.5V24z"
+              stroke="#0d3b2c"
+              stroke-width="1.8"
+              stroke-linejoin="round"
+            />
+            <circle cx="14" cy="24" r="1.6" fill="#178a4c" />
+            <circle cx="26" cy="24" r="1.6" fill="#178a4c" />
+          </svg>
+          <span><strong>PartMatch</strong><small>Customer Console</small></span>
         </div>
 
         <a href="{{ url_for('customer_dashboard') }}" class="navlink active">
-            <svg viewBox="0 0 20 20" fill="none"><path d="M3 10l7-6 7 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 9v7a1 1 0 001 1h8a1 1 0 001-1V9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-            Dashboard
+          <svg viewBox="0 0 20 20" fill="none">
+            <path
+              d="M3 10l7-6 7 6"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M5 9v7a1 1 0 001 1h8a1 1 0 001-1V9"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+            />
+          </svg>
+          Dashboard
         </a>
         <a href="{{ url_for('customer_vehicles') }}" class="navlink">
-            <svg viewBox="0 0 20 20" fill="none"><path d="M3 12h14l-1.5-4H4.5L3 12z" stroke="currentColor" stroke-width="1.5"/><circle cx="6" cy="14" r="1.5" stroke="currentColor" stroke-width="1.5"/><circle cx="14" cy="14" r="1.5" stroke="currentColor" stroke-width="1.5"/></svg>
-            My Vehicles
+          <svg viewBox="0 0 20 20" fill="none">
+            <path
+              d="M3 12h14l-1.5-4H4.5L3 12z"
+              stroke="currentColor"
+              stroke-width="1.5"
+            />
+            <circle
+              cx="6"
+              cy="14"
+              r="1.5"
+              stroke="currentColor"
+              stroke-width="1.5"
+            />
+            <circle
+              cx="14"
+              cy="14"
+              r="1.5"
+              stroke="currentColor"
+              stroke-width="1.5"
+            />
+          </svg>
+          My Vehicles
         </a>
         <a href="{{ url_for('customer_search_parts') }}" class="navlink">
-            <svg viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M13 13l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-            Find Parts
+          <svg viewBox="0 0 20 20" fill="none">
+            <circle
+              cx="9"
+              cy="9"
+              r="5"
+              stroke="currentColor"
+              stroke-width="1.5"
+            />
+            <path
+              d="M13 13l4 4"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+            />
+          </svg>
+          Find Parts
         </a>
         <a href="{{ url_for('customer_orders') }}" class="navlink">
-            <svg viewBox="0 0 20 20" fill="none"><rect x="3" y="5" width="14" height="12" rx="1" stroke="currentColor" stroke-width="1.5"/><path d="M7 5V3h6v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-            Orders
+          <svg viewBox="0 0 20 20" fill="none">
+            <rect
+              x="3"
+              y="5"
+              width="14"
+              height="12"
+              rx="1"
+              stroke="currentColor"
+              stroke-width="1.5"
+            />
+            <path
+              d="M7 5V3h6v2"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+            />
+          </svg>
+          Orders
         </a>
         <a href="{{ url_for('customer_bookings') }}" class="navlink">
-            <svg viewBox="0 0 20 20" fill="none"><rect x="3" y="4" width="14" height="13" rx="1" stroke="currentColor" stroke-width="1.5"/><path d="M3 8h14M7 2v4M13 2v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-            Bookings
+          <svg viewBox="0 0 20 20" fill="none">
+            <rect
+              x="3"
+              y="4"
+              width="14"
+              height="13"
+              rx="1"
+              stroke="currentColor"
+              stroke-width="1.5"
+            />
+            <path
+              d="M3 8h14M7 2v4M13 2v4"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+            />
+          </svg>
+          Bookings
         </a>
         <a href="{{ url_for('customer_profile') }}" class="navlink">
-            <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="3.5" stroke="currentColor" stroke-width="1.5"/><path d="M3 18c1.5-4 4-6 7-6s5.5 2 7 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-            Profile
+          <svg viewBox="0 0 20 20" fill="none">
+            <circle
+              cx="10"
+              cy="7"
+              r="3.5"
+              stroke="currentColor"
+              stroke-width="1.5"
+            />
+            <path
+              d="M3 18c1.5-4 4-6 7-6s5.5 2 7 6"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+            />
+          </svg>
+          Profile
         </a>
         <a href="{{ url_for('customer_cart') }}" class="navlink">🛒 Cart</a>
         <div class="nav-spacer"></div>
         <a href="{{ url_for('logout') }}" class="navlink logout">
-            <svg viewBox="0 0 20 20" fill="none"><path d="M8 17H4.5A1.5 1.5 0 013 15.5v-11A1.5 1.5 0 014.5 3H8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M13 13.5L17 10l-4-3.5M17 10H8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-            Logout
+          <svg viewBox="0 0 20 20" fill="none">
+            <path
+              d="M8 17H4.5A1.5 1.5 0 013 15.5v-11A1.5 1.5 0 014.5 3H8"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+            />
+            <path
+              d="M13 13.5L17 10l-4-3.5M17 10H8"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+            />
+          </svg>
+          Logout
         </a>
+      </div>
     </div>
-</div>
 
-<div class="wrap">
-
-    <!-- ============ PAGE HEADER ============ -->
-    <div class="page-head anim d1">
+    <div class="wrap">
+      <!-- ============ PAGE HEADER ============ -->
+      <div class="page-head anim d1">
         <span class="eyebrow">Customer Panel</span>
         <h1>Welcome back, {{ session.get('user_name') }}! 👋</h1>
         <p>Ready to find the right parts for your vehicle?</p>
-    </div>
+      </div>
 
-    <!-- ============ STATS ============ -->
-    <div class="stats-grid">
+      <!-- ============ STATS ============ -->
+      <div class="stats-grid">
         <div class="stat-card anim d2">
-            <div class="stat-value">{{ vehicle_count }}</div>
-            <div class="stat-label">My Vehicles</div>
+          <div class="stat-value">{{ vehicle_count }}</div>
+          <div class="stat-label">My Vehicles</div>
         </div>
         <div class="stat-card info anim d3">
-            <div class="stat-value">{{ order_count }}</div>
-            <div class="stat-label">Total Orders</div>
+          <div class="stat-value">{{ order_count }}</div>
+          <div class="stat-label">Total Orders</div>
         </div>
         <div class="stat-card success anim d4">
-            <div class="stat-value">{{ available_products }}</div>
-            <div class="stat-label">Parts Available</div>
+          <div class="stat-value">{{ available_products }}</div>
+          <div class="stat-label">Parts Available</div>
         </div>
         <div class="stat-card warning anim d5">
-            <div class="stat-value">{{ upcoming_bookings|length }}</div>
-            <div class="stat-label">Upcoming Bookings</div>
+          <div class="stat-value">{{ upcoming_bookings|length }}</div>
+          <div class="stat-label">Upcoming Bookings</div>
         </div>
-    </div>
+      </div>
 
-    <!-- ============ QUICK ACTIONS ============ -->
-    <div class="quick-grid">
+      <!-- ============ QUICK ACTIONS ============ -->
+      <div class="quick-grid">
         <a href="{{ url_for('customer_vehicles') }}" class="quick-card anim d2">
-            <div class="icon">🚗</div>
-            <h4>Register Vehicle</h4>
-            <p>Add your car for part matching</p>
+          <div class="icon">🚗</div>
+          <h4>Register Vehicle</h4>
+          <p>Add your car for part matching</p>
         </a>
-        <a href="{{ url_for('customer_search_parts') }}" class="quick-card anim d3">
-            <div class="icon">🔍</div>
-            <h4>Find Spare Parts</h4>
-            <p>Browse compatible parts</p>
+        <a
+          href="{{ url_for('customer_search_parts') }}"
+          class="quick-card anim d3"
+        >
+          <div class="icon">🔍</div>
+          <h4>Find Spare Parts</h4>
+          <p>Browse compatible parts</p>
         </a>
         <a href="{{ url_for('customer_bookings') }}" class="quick-card anim d4">
-            <div class="icon">📅</div>
-            <h4>Book Service</h4>
-            <p>Schedule installation</p>
+          <div class="icon">📅</div>
+          <h4>Book Service</h4>
+          <p>Schedule installation</p>
         </a>
         <a href="{{ url_for('customer_orders') }}" class="quick-card anim d5">
-            <div class="icon">📦</div>
-            <h4>My Orders</h4>
-            <p>Track your purchases</p>
+          <div class="icon">📦</div>
+          <h4>My Orders</h4>
+          <p>Track your purchases</p>
         </a>
-    </div>
+      </div>
 
-    <!-- ============ PANELS ============ -->
-    <div class="panel-row">
+      <!-- ============ PANELS ============ -->
+      <div class="panel-row">
         <!-- My Vehicles -->
         <div class="panel anim d4">
-            <h3>
-                <svg viewBox="0 0 20 20" fill="none"><path d="M3 12h14l-1.5-4H4.5L3 12z" stroke="currentColor" stroke-width="1.5"/><circle cx="6" cy="14" r="1.5" stroke="currentColor" stroke-width="1.5"/><circle cx="14" cy="14" r="1.5" stroke="currentColor" stroke-width="1.5"/></svg>
-                My Vehicles
-            </h3>
-            {% if vehicles %}
-            <table>
-                <thead><tr><th>Make</th><th>Model</th><th>Year</th><th>Fuel</th></tr></thead>
-                <tbody>
-                    {% for v in vehicles %}
-                    <tr>
-                        <td>{{ v.make }}</td>
-                        <td>{{ v.model }}</td>
-                        <td>{{ v.year }}</td>
-                        <td><span class="badge badge-info">{{ v.fuel_type }}</span></td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            {% else %}
-            <div class="empty-state">
-                <div class="icon">🚗</div>
-                <p>No vehicles registered yet.</p>
-                <a href="{{ url_for('customer_vehicles') }}" class="btn btn-solid btn-sm" style="margin-top:10px;">+ Add Vehicle</a>
-            </div>
-            {% endif %}
+          <h3>
+            <svg viewBox="0 0 20 20" fill="none">
+              <path
+                d="M3 12h14l-1.5-4H4.5L3 12z"
+                stroke="currentColor"
+                stroke-width="1.5"
+              />
+              <circle
+                cx="6"
+                cy="14"
+                r="1.5"
+                stroke="currentColor"
+                stroke-width="1.5"
+              />
+              <circle
+                cx="14"
+                cy="14"
+                r="1.5"
+                stroke="currentColor"
+                stroke-width="1.5"
+              />
+            </svg>
+            My Vehicles
+          </h3>
+          {% if vehicles %}
+          <table>
+            <thead>
+              <tr>
+                <th>Make</th>
+                <th>Model</th>
+                <th>Year</th>
+                <th>Fuel</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for v in vehicles %}
+              <tr>
+                <td>{{ v.make }}</td>
+                <td>{{ v.model }}</td>
+                <td>{{ v.year }}</td>
+                <td><span class="badge badge-info">{{ v.fuel_type }}</span></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <div class="empty-state">
+            <div class="icon">🚗</div>
+            <p>No vehicles registered yet.</p>
+            <a
+              href="{{ url_for('customer_vehicles') }}"
+              class="btn btn-solid btn-sm"
+              style="margin-top: 10px"
+              >+ Add Vehicle</a
+            >
+          </div>
+          {% endif %}
         </div>
 
         <!-- Recent Orders -->
         <div class="panel anim d5">
-            <h3>
-                <svg viewBox="0 0 20 20" fill="none"><rect x="3" y="5" width="14" height="12" rx="1" stroke="currentColor" stroke-width="1.5"/><path d="M7 5V3h6v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-                Recent Orders
-            </h3>
-            {% if recent_orders %}
-            <table>
-                <thead><tr><th>Order</th><th>Items</th><th>Amount</th><th>Status</th></tr></thead>
-                <tbody>
-                    {% for order in recent_orders %}
-                    <tr>
-                        <td>#{{ order.id }}</td>
-                        <td>{{ order.item_count }}</td>
-                        <td>₹{{ '%.0f'|format(order.total_amount) }}</td>
-                        <td><span class="badge badge-success">{{ order.order_status }}</span></td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            {% else %}
-            <div class="empty-state">
-                <div class="icon">📦</div>
-                <p>No orders yet.</p>
-                <a href="{{ url_for('customer_search_parts') }}" class="btn btn-solid btn-sm" style="margin-top:10px;">Browse Parts</a>
-            </div>
-            {% endif %}
+          <h3>
+            <svg viewBox="0 0 20 20" fill="none">
+              <rect
+                x="3"
+                y="5"
+                width="14"
+                height="12"
+                rx="1"
+                stroke="currentColor"
+                stroke-width="1.5"
+              />
+              <path
+                d="M7 5V3h6v2"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+              />
+            </svg>
+            Recent Orders
+          </h3>
+          {% if recent_orders %}
+          <table>
+            <thead>
+              <tr>
+                <th>Order</th>
+                <th>Items</th>
+                <th>Amount</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for order in recent_orders %}
+              <tr>
+                <td>#{{ order.id }}</td>
+                <td>{{ order.item_count }}</td>
+                <td>₹{{ '%.0f'|format(order.total_amount) }}</td>
+                <td>
+                  <span class="badge badge-success"
+                    >{{ order.order_status }}</span
+                  >
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <div class="empty-state">
+            <div class="icon">📦</div>
+            <p>No orders yet.</p>
+            <a
+              href="{{ url_for('customer_search_parts') }}"
+              class="btn btn-solid btn-sm"
+              style="margin-top: 10px"
+              >Browse Parts</a
+            >
+          </div>
+          {% endif %}
         </div>
-    </div>
+      </div>
 
-    <!-- Upcoming Bookings -->
-    {% if upcoming_bookings %}
-    <div class="panel anim d6" style="margin-bottom:40px;">
+      <!-- Upcoming Bookings -->
+      {% if upcoming_bookings %}
+      <div class="panel anim d6" style="margin-bottom: 40px">
         <h3>📅 Upcoming Service Bookings</h3>
         <table>
-            <thead><tr><th>Service Center</th><th>Date</th><th>Time</th><th>Service Type</th></tr></thead>
-            <tbody>
-                {% for booking in upcoming_bookings %}
-                <tr>
-                    <td>{{ booking.station_name }}</td>
-                    <td>{{ booking.booking_date }}</td>
-                    <td>{{ booking.time_slot }}</td>
-                    <td>{{ booking.service_type }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
+          <thead>
+            <tr>
+              <th>Service Center</th>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Service Type</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for booking in upcoming_bookings %}
+            <tr>
+              <td>{{ booking.station_name }}</td>
+              <td>{{ booking.booking_date }}</td>
+              <td>{{ booking.time_slot }}</td>
+              <td>{{ booking.service_type }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
         </table>
+      </div>
+      {% endif %}
+      <!-- 🔔 MAINTENANCE ALERTS -->
+      {% if maintenance_alerts %}
+      <div class="panel anim d6" style="margin-bottom: 40px">
+        <h3
+          style="
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+          "
+        >
+          🔔 Maintenance Alerts
+          <span
+            style="
+              font-family: &quot;IBM Plex Mono&quot;, monospace;
+              font-size: 11px;
+              padding: 4px 10px;
+              background: var(--green-050);
+              border-radius: 20px;
+              color: var(--green-700);
+            "
+          >
+            {{ maintenance_alerts|length }} alert{{ 's' if
+            maintenance_alerts|length != 1 }}
+          </span>
+        </h3>
+
+        {% for alert in maintenance_alerts %}
+        <div class="alert-card alert-{{ alert.level }}">
+          <div class="alert-icon">{{ alert.icon }}</div>
+          <div class="alert-body">
+            <div class="alert-title">{{ alert.title }}</div>
+            <div class="alert-message">{{ alert.message }}</div>
+          </div>
+          <a href="{{ url_for('customer_bookings') }}" class="alert-action">
+            Book Service →
+          </a>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div
+        class="panel anim d6"
+        style="margin-bottom: 40px; text-align: center; padding: 36px 24px"
+      >
+        <div style="font-size: 42px; margin-bottom: 12px; opacity: 0.6">✅</div>
+        <h3 style="font-size: 16px; margin-bottom: 6px">All Clear!</h3>
+        <p style="color: var(--ink-soft); font-size: 13.5px">
+          No maintenance alerts. Your vehicles are up to date.
+        </p>
+      </div>
+      {% endif %}
     </div>
-    {% endif %}
-
-</div>
-
-</body>
+  </body>
 </html>

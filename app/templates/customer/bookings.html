@@ -28,12 +28,14 @@
 
         .topbar{position:sticky; top:0; z-index:100; background:var(--glass-bg-strong); backdrop-filter:blur(18px); border-bottom:1px solid var(--glass-border); padding:14px 0;}
         .topbar-row{display:flex; align-items:center; gap:6px; overflow-x:auto; scrollbar-width:none;}
-        .brandmark{display:flex; align-items:center; gap:10px; margin-right:18px; font-family:'Space Grotesk',sans-serif; font-weight:700;}
-        .navlink{display:flex; align-items:center; gap:7px; padding:9px 14px; font-size:13.5px; font-weight:600; color:var(--ink-soft); border-radius:8px; white-space:nowrap; flex-shrink:0;}
+        .topbar-row::-webkit-scrollbar{display:none;}
+        .brandmark{display:flex; align-items:center; gap:10px; margin-right:18px; font-family:'Space Grotesk',sans-serif; font-weight:700; flex-shrink:0;}
+        .navlink{display:flex; align-items:center; gap:7px; padding:9px 14px; font-size:13.5px; font-weight:600; color:var(--ink-soft); border-radius:8px; white-space:nowrap; flex-shrink:0; transition:all .25s ease;}
         .navlink:hover{background:var(--green-050); color:var(--green-700);}
         .navlink.active{background:var(--green-700); color:#fff;}
         .nav-spacer{flex:1;}
         .navlink.logout{color:var(--red); margin-left:auto;}
+        .navlink.logout:hover{background:#fdecea;}
 
         .page-head{padding:34px 0 20px;}
         .eyebrow{display:inline-flex; align-items:center; gap:8px; font-family:'IBM Plex Mono',monospace; font-size:11.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--green-700); padding:6px 12px; border:1px dashed var(--line-strong); background:var(--green-050);}
@@ -53,6 +55,8 @@
         .field-row{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
         @media(max-width:500px){.field-row{grid-template-columns:1fr;}}
 
+        .center-rating{font-size:12.5px; color:var(--ink-faint); margin-top:8px; min-height:18px;}
+
         .btn{font-family:'Inter',sans-serif; font-weight:600; font-size:14px; cursor:pointer; border:none; padding:12px 22px; border-radius:10px; display:inline-flex; align-items:center; justify-content:center; gap:8px; transition:all .25s ease; text-decoration:none;}
         .btn-solid{background:var(--green-700); color:#fff; width:100%;}
         .btn-solid:hover{background:var(--green-900);}
@@ -71,6 +75,23 @@
 
         .empty{text-align:center; padding:40px 20px; color:var(--ink-faint);}
         .empty .icon{font-size:48px; margin-bottom:12px; opacity:.6;}
+
+        /* Review section styles */
+        .review-section{margin-top:14px; padding-top:14px; border-top:1px dashed var(--line);}
+        .review-summary{cursor:pointer; font-size:12.5px; font-weight:600; color:var(--green-700); user-select:none;}
+        .review-summary:hover{text-decoration:underline;}
+        .star-radio{display:flex; gap:4px; font-size:22px;}
+        .star-radio label{cursor:pointer;}
+        .star-radio input{display:none;}
+        .star-radio .star{color:#ccc; transition:color .2s ease;}
+        .star-radio input:checked ~ .star,
+        .star-radio input:checked + .star {color:#f5a623;}
+        .star-radio label:hover .star,
+        .star-radio label:hover ~ label .star {color:#f5a623;}
+        .review-textarea{width:100%; padding:10px; border:1.5px solid var(--line-strong); border-radius:8px; font-family:inherit; font-size:13px; margin-bottom:8px; resize:vertical;}
+        .review-textarea:focus{outline:none; border-color:var(--green-600);}
+        .review-submit{background:var(--green-700); color:#fff; border:none; padding:8px 18px; border-radius:8px; font-weight:600; font-size:12.5px; cursor:pointer;}
+        .review-submit:hover{background:var(--green-900);}
     </style>
 </head>
 <body>
@@ -93,7 +114,7 @@
 <div class="wrap">
     <div class="page-head anim">
         <span class="eyebrow">Service Bookings</span>
-        <h1>Book Installation & Servicing</h1>
+        <h1>Book Installation &amp; Servicing</h1>
     </div>
 
     <div class="layout">
@@ -105,12 +126,16 @@
                 <form method="POST">
                     <div class="field">
                         <label>Service Center *</label>
-                        <select name="station_id" required>
+                        <select name="station_id" id="stationSelect" required>
                             <option value="">Choose a center</option>
                             {% for sc in service_centers %}
-                            <option value="{{ sc.id }}">{{ sc.center_name }} — {{ sc.city or 'N/A' }}</option>
+                            <option value="{{ sc.id }}">
+                                {{ sc.center_name }} — {{ sc.city or 'N/A' }}
+                                {% if sc.avg_rating %} (★ {{ '%.1f'|format(sc.avg_rating) }} · {{ sc.review_count }} reviews){% endif %}
+                            </option>
                             {% endfor %}
                         </select>
+                        <p id="centerRating" style="font-size:12.5px; color:var(--ink-faint); margin-top:6px;"></p>
                     </div>
                     <div class="field">
                         <label>My Vehicle *</label>
@@ -124,7 +149,7 @@
                     <div class="field-row">
                         <div class="field">
                             <label>Date *</label>
-                            <input type="date" name="booking_date" required min="{{ '' }}">
+                            <input type="date" name="booking_date" required>
                         </div>
                         <div class="field">
                             <label>Time Slot *</label>
@@ -188,6 +213,47 @@
                         <strong>Service:</strong> {{ b.service_type or 'General Service' }}
                         {% if b.notes %}<br><strong>Notes:</strong> {{ b.notes }}{% endif %}
                     </div>
+
+                    <!-- ⭐ REVIEW SECTION (only for completed bookings) -->
+                    {% if b.status == 'completed' %}
+                    <div class="review-section">
+                        <details>
+                            <summary class="review-summary">
+                                ⭐ Leave a review for this service center
+                            </summary>
+                            <form method="POST" action="{{ url_for('customer_submit_center_review', booking_id=b.id) }}" style="margin-top:12px;">
+                                <div style="margin-bottom:10px;">
+                                    <div class="star-radio">
+                                        <label>
+                                            <input type="radio" name="rating" value="1" required>
+                                            <span class="star">★</span>
+                                        </label>
+                                        <label>
+                                            <input type="radio" name="rating" value="2">
+                                            <span class="star">★</span>
+                                        </label>
+                                        <label>
+                                            <input type="radio" name="rating" value="3">
+                                            <span class="star">★</span>
+                                        </label>
+                                        <label>
+                                            <input type="radio" name="rating" value="4">
+                                            <span class="star">★</span>
+                                        </label>
+                                        <label>
+                                            <input type="radio" name="rating" value="5" checked>
+                                            <span class="star">★</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <textarea name="comment" rows="2" placeholder="How was the service?" class="review-textarea"></textarea>
+                                <button type="submit" class="review-submit">
+                                    Submit Review
+                                </button>
+                            </form>
+                        </details>
+                    </div>
+                    {% endif %}
                 </div>
                 {% else %}
                 <div class="empty">
@@ -199,6 +265,27 @@
         </div>
     </div>
 </div>
+
+<script>
+var centerRatings = {
+    {% for sc in service_centers %}
+    "{{ sc.id }}": {
+        rating: {{ sc.avg_rating or 0 }},
+        count: {{ sc.review_count or 0 }}
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+};
+document.querySelector('[name="station_id"]').addEventListener('change', function() {
+    var info = centerRatings[this.value];
+    var el = document.getElementById('centerRating');
+    if (info && info.count > 0) {
+        var stars = '★'.repeat(Math.round(info.rating)) + '☆'.repeat(5 - Math.round(info.rating));
+        el.innerHTML = '<span style="color:#f5a623;">' + stars + '</span> ' + info.rating.toFixed(1) + ' from ' + info.count + ' review(s)';
+    } else {
+        el.textContent = '';
+    }
+});
+</script>
 
 </body>
 </html>

@@ -2,47 +2,126 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Profile — Service Center</title>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile — PartMatch Service Center</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
-        :root{--ink:#0f1e17; --ink-soft:#4c5f56; --ink-faint:#8a9992; --green-700:#146c43; --green-900:#0d3b2c; --green-050:#eefbf1; --line:#d9e9dd; --line-strong:#b8d4c0; --glass-bg:rgba(255,255,255,0.5); --glass-border:rgba(255,255,255,0.8); --glass-shadow:0 8px 32px -8px rgba(13,59,44,0.2);}
+        :root{
+          --ink:#0f1e17; --ink-soft:#4c5f56; --ink-faint:#8a9992;
+          --green-900:#0d3b2c; --green-700:#146c43; --green-600:#178a4c;
+          --green-500:#1fa85a; --green-050:#eefbf1; --line:#d9e9dd; --line-strong:#b8d4c0;
+          --red:#e74c3c; --amber:#e67e22;
+          --glass-bg:rgba(255,255,255,0.5);
+          --glass-bg-strong:rgba(255,255,255,0.72);
+          --glass-border:rgba(255,255,255,0.8);
+          --glass-shadow:0 8px 32px -8px rgba(13,59,44,0.2);
+        }
         *{box-sizing:border-box; margin:0; padding:0;}
         body{font-family:'Inter',sans-serif; color:var(--ink); min-height:100vh;}
         h1,h2,h3{font-family:'Space Grotesk',sans-serif;}
         .wrap{max-width:800px; margin:0 auto; padding:0 32px;}
         a{color:inherit; text-decoration:none;}
-        body::before{content:""; position:fixed; inset:0; z-index:-3; background: radial-gradient(ellipse 55% 45% at 6% -8%, rgba(34,197,94,0.30) 0%, transparent 62%), linear-gradient(180deg, #eefaf1 0%, #e2f4ea 45%, #edf8f0 100%);}
-        .topbar{background:var(--glass-bg); backdrop-filter:blur(18px); border-bottom:1px solid var(--glass-border); padding:14px 0;}
-        .brandmark{display:flex; align-items:center; gap:10px; font-family:'Space Grotesk',sans-serif; font-weight:700;}
+
+        body::before{
+          content:""; position:fixed; inset:0; z-index:-3;
+          background: radial-gradient(ellipse 55% 45% at 6% -8%, rgba(34,197,94,0.30) 0%, transparent 62%),
+            radial-gradient(ellipse 55% 50% at 102% -4%, rgba(45,212,191,0.26) 0%, transparent 58%),
+            linear-gradient(180deg, #eefaf1 0%, #e2f4ea 45%, #edf8f0 100%);
+        }
+        @keyframes fadeUp{from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:translateY(0);}}
+        .anim{animation:fadeUp .6s cubic-bezier(.22,.61,.36,1) both;}
+
+        /* ============ TOPBAR ============ */
+        .topbar{
+          background:var(--glass-bg-strong);
+          backdrop-filter:blur(18px) saturate(1.7); -webkit-backdrop-filter:blur(18px) saturate(1.7);
+          border-bottom:1px solid var(--glass-border);
+          box-shadow:0 4px 24px -12px rgba(13,59,44,0.12);
+          position:sticky; top:0; z-index:100;
+        }
+        .topbar .wrap{max-width:1280px;}
+        .topbar-row{display:flex; align-items:center; gap:6px; padding:14px 0; overflow-x:auto; scrollbar-width:none;}
+        .topbar-row::-webkit-scrollbar{display:none;}
+        .brandmark{
+          display:flex; align-items:center; gap:10px; margin-right:18px; flex-shrink:0;
+          font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:16px;
+        }
+        .navlink{
+          display:flex; align-items:center; gap:7px; padding:9px 14px; font-size:13.5px; font-weight:600;
+          color:var(--ink-soft); border:1px solid transparent; border-radius:8px; white-space:nowrap;
+          transition:all .25s ease; flex-shrink:0;
+        }
+        .navlink:hover{background:var(--green-050); color:var(--green-700); border-color:var(--line);}
+        .navlink.active{background:var(--green-700); color:#fff; box-shadow:0 4px 14px -4px rgba(20,108,67,.5);}
+        .nav-spacer{flex:1;}
+        .navlink.logout{color:var(--red); margin-left:auto;}
+        .navlink.logout:hover{background:#fdecea; border-color:#f6c6c1;}
+
+        /* ============ PAGE HEAD ============ */
         .page-head{padding:34px 0 20px;}
-        .eyebrow{display:inline-flex; align-items:center; gap:8px; font-family:'IBM Plex Mono',monospace; font-size:11.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--green-700); padding:6px 12px; border:1px dashed var(--line-strong); background:var(--green-050);}
-        .eyebrow::before{content:""; width:6px; height:6px; background:var(--green-700); border-radius:50%;}
+        .eyebrow{
+          display:inline-flex; align-items:center; gap:8px;
+          font-family:'IBM Plex Mono',monospace; font-size:11.5px; letter-spacing:.14em; text-transform:uppercase;
+          color:var(--green-700); font-weight:500; padding:6px 12px;
+          border:1px dashed var(--line-strong); background:var(--green-050);
+        }
+        .eyebrow::before{content:""; width:6px; height:6px; background:var(--green-500); border-radius:50%; animation:pulseDot 1.8s ease-in-out infinite;}
+        @keyframes pulseDot{0%,100%{opacity:1;} 50%{opacity:.35;}}
         .page-head h1{font-size:28px; margin-top:10px;}
-        .card{padding:28px; border-radius:16px; background:var(--glass-bg); backdrop-filter:blur(18px); border:1px solid var(--glass-border); box-shadow:var(--glass-shadow); margin-bottom:20px;}
+
+        /* ============ CARD ============ */
+        .card{
+          padding:28px; border-radius:16px;
+          background:var(--glass-bg); backdrop-filter:blur(18px);
+          border:1px solid var(--glass-border); box-shadow:var(--glass-shadow);
+          margin-bottom:20px;
+        }
         .card h3{font-size:16px; margin-bottom:18px;}
+
+        /* ============ FORM ============ */
         .field{margin-bottom:14px;}
         .field label{display:block; font-size:13px; font-weight:600; margin-bottom:6px;}
-        .field input,.field textarea{width:100%; padding:11px 14px; border:1.5px solid var(--line-strong); border-radius:10px; font-family:inherit; font-size:14px; background:rgba(255,255,255,0.7);}
-        .field input:focus,.field textarea:focus{outline:none; border-color:var(--green-700); background:#fff;}
+        .field input, .field textarea{
+          width:100%; padding:11px 14px; border:1.5px solid var(--line-strong); border-radius:10px;
+          font-family:inherit; font-size:14px; background:rgba(255,255,255,0.7);
+          transition:all .2s ease;
+        }
+        .field input:focus, .field textarea:focus{outline:none; border-color:var(--green-600); background:#fff; box-shadow:0 0 0 3px rgba(31,168,90,0.1);}
+        .field textarea{resize:vertical;}
         .field-row{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
-        .badge{display:inline-block; padding:4px 12px; border-radius:20px; font-size:11px; font-weight:700; text-transform:uppercase;}
+        @media(max-width:500px){.field-row{grid-template-columns:1fr;}}
+
+        /* ============ BADGE ============ */
+        .badge{display:inline-block; padding:4px 12px; border-radius:20px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em;}
         .badge-ok{background:#d5f5e3; color:#27ae60;}
-        .badge-pending{background:#fef9e7; color:#e67e22;}
-        .btn{font-family:'Inter',sans-serif; font-weight:600; font-size:14px; cursor:pointer; border:none; padding:12px 22px; border-radius:10px; background:var(--green-700); color:#fff;}
-        .btn:hover{background:var(--green-900);}
+        .badge-pending{background:#fef9e7; color:var(--amber);}
+
+        /* ============ BUTTON ============ */
+        .btn{
+          font-family:'Inter',sans-serif; font-weight:600; font-size:14px; cursor:pointer; border:none;
+          padding:12px 22px; border-radius:10px; background:var(--green-700); color:#fff;
+          transition:all .25s ease;
+        }
+        .btn:hover{background:var(--green-900); transform:translateY(-1px); box-shadow:0 6px 20px -4px rgba(20,108,67,.5);}
     </style>
 </head>
 <body>
 
-<div class="topbar">
-    <div class="wrap" style="display:flex; align-items:center; justify-content:space-between;">
-        <div class="brandmark">🔧 PartMatch — Service Center</div>
-        <a href="{{ url_for('service_center_dashboard') }}" style="font-size:13px; color:var(--green-700); font-weight:600;">← Back to Dashboard</a>
+<div class="topbar anim">
+    <div class="wrap topbar-row">
+        <div class="brandmark">🔧 PartMatch · Service Center</div>
+        <a href="{{ url_for('service_center_dashboard') }}" class="navlink">🏠 Dashboard</a>
+        <a href="{{ url_for('service_center_reviews') }}" class="navlink">⭐ Reviews</a>
+        <a href="{{ url_for('service_center_maintenance') }}" class="navlink">🛠️ Maintenance</a>
+        <a href="{{ url_for('service_center_analytics') }}" class="navlink">📊 Analytics</a>
+        <a href="{{ url_for('service_center_profile') }}" class="navlink active">👤 Profile</a>
+        <div class="nav-spacer"></div>
+        <a href="{{ url_for('logout') }}" class="navlink logout">🚪 Logout</a>
     </div>
 </div>
 
 <div class="wrap">
-    <div class="page-head">
+    <div class="page-head anim">
         <span class="eyebrow">Profile</span>
         <h1>{{ user.center_name }}</h1>
         <p style="margin-top:8px;">
@@ -52,7 +131,7 @@
         </p>
     </div>
 
-    <div class="card">
+    <div class="card anim">
         <h3>✏️ Edit Profile</h3>
         <form method="POST">
             <div class="field-row">

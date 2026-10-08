@@ -7,6 +7,8 @@ import json
 import os
 import razorpay
 from dotenv import load_dotenv
+from flask_mail import Mail, Message
+import secrets
 
 # Load environment variables from .env
 load_dotenv()
@@ -41,6 +43,29 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+# ==================== EMAIL CONFIGURATION ====================
+app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
+app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 587))
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME', '')
+app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD', '')
+app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER', 'noreply@partmatch.com')
+
+mail = Mail(app)
+
+def send_email(to, subject, body_html):
+    """Send email safely — won't crash app if mail fails"""
+    if not app.config['MAIL_USERNAME']:
+        print(f"[MAIL SKIP] Would send to {to}: {subject}")
+        return False
+    try:
+        msg = Message(subject=subject, recipients=[to], html=body_html)
+        mail.send(msg)
+        return True
+    except Exception as e:
+        print(f"[MAIL ERROR] {e}")
+        return False
+    
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
@@ -86,9 +111,48 @@ def get_db_connection():
     )
 
 # ------------------ Homepage ------------------
+# ------------------ Homepage ------------------
 @app.route('/')
 def home():
-    return render_template('base.html')
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Featured products
+    cursor.execute("""
+        SELECT p.id, p.name, p.price, p.image, p.brand,
+               pc.name as category_name,
+               u.name as vendor_name,
+               vd.business_name,
+               (SELECT AVG(rating) FROM reviews WHERE product_id = p.id) as avg_rating,
+               (SELECT COUNT(*) FROM reviews WHERE product_id = p.id) as review_count
+        FROM products p
+        LEFT JOIN product_categories pc ON p.category_id = pc.id
+        JOIN users u ON p.vendor_id = u.id
+        LEFT JOIN vendor_details vd ON u.id = vd.user_id
+        WHERE p.is_approved = 1 AND p.stock_quantity > 0
+        ORDER BY avg_rating DESC, p.created_at DESC
+        LIMIT 6
+    """)
+    featured_products = cursor.fetchall()
+    
+    # Platform stats
+    cursor.execute("SELECT COUNT(*) as total FROM products WHERE is_approved = 1")
+    total_products = cursor.fetchone()['total']
+    
+    cursor.execute("SELECT COUNT(*) as total FROM vendor_details WHERE is_approved = 1")
+    total_vendors = cursor.fetchone()['total']
+    
+    cursor.execute("SELECT COUNT(*) as total FROM service_center_details WHERE is_approved = 1")
+    total_centers = cursor.fetchone()['total']
+    
+    cursor.close()
+    conn.close()
+    
+    return render_template('base.html',
+                         featured_products=featured_products,
+                         total_products=total_products,
+                         total_vendors=total_vendors,
+                         total_centers=total_centers)
 
 # ------------------ Registration (from modal) ------------------
 @app.route('/register', methods=['POST'])
@@ -287,14 +351,141 @@ def customer_dashboard():
     
     # Upcoming bookings
     cursor.execute("""
-        SELECT sb.*, ss.name as station_name 
+        SELECT sb.*, sc.center_name as station_name 
         FROM service_bookings sb
-        JOIN service_stations ss ON sb.station_id = ss.id
+        JOIN service_center_details sc ON sb.station_id = sc.user_id
         WHERE sb.customer_id = %s AND sb.booking_date >= CURDATE()
         ORDER BY sb.booking_date ASC
         LIMIT 3
     """, (customer_id,))
     upcoming_bookings = cursor.fetchall()
+    
+    # ==================== MAINTENANCE ALERTS ====================
+    # Generate alerts based on vehicle maintenance records and last service dates
+    maintenance_alerts = []
+    today = datetime.now().date()
+    
+    # Rule-based alert generation: check each vehicle's latest maintenance records
+    cursor.execute("""
+        SELECT v.id, v.make, v.model, v.registration_number, v.year,
+               mr.service_type, mr.next_due_date, mr.next_due_mileage_km, 
+               mr.mileage_km, mr.created_at
+        FROM vehicles v
+        LEFT JOIN maintenance_records mr ON v.id = mr.vehicle_id
+        WHERE v.user_id = %s
+        ORDER BY v.id, mr.created_at DESC
+    """, (customer_id,))
+    all_records = cursor.fetchall()
+    
+    # Group by vehicle
+    vehicle_records = {}
+    for r in all_records:
+        vid = r['id']
+        if vid not in vehicle_records:
+            vehicle_records[vid] = {
+                'vehicle': r,
+                'records': []
+            }
+        if r['service_type']:
+            vehicle_records[vid]['records'].append(r)
+    
+    # Generate alerts per vehicle
+    for vid, data in vehicle_records.items():
+        v = data['vehicle']
+        vehicle_label = f"{v['make']} {v['model']}"
+        if v.get('registration_number'):
+            vehicle_label += f" ({v['registration_number']})"
+        
+        if not data['records']:
+            # No service history at all — recommend first service
+            maintenance_alerts.append({
+                'level': 'info',
+                'icon': '🆕',
+                'title': 'New Vehicle',
+                'message': f"{vehicle_label} has no service history. Consider booking a general inspection.",
+                'vehicle': vehicle_label,
+                'vehicle_id': vid
+            })
+            continue
+        
+        # Check latest record for each service type
+        seen_types = set()
+        for rec in data['records']:
+            stype = rec['service_type']
+            if stype in seen_types:
+                continue
+            seen_types.add(stype)
+            
+            # Check next_due_date
+            if rec['next_due_date']:
+                due = rec['next_due_date']
+                days_until = (due - today).days
+                
+                if days_until < 0:
+                    maintenance_alerts.append({
+                        'level': 'danger',
+                        'icon': '⚠️',
+                        'title': f'{stype} overdue',
+                        'message': f"{vehicle_label} — {stype} was due {abs(days_until)} day(s) ago on {due.strftime('%d %b %Y')}.",
+                        'vehicle': vehicle_label,
+                        'vehicle_id': vid,
+                        'due_date': due
+                    })
+                elif days_until <= 15:
+                    maintenance_alerts.append({
+                        'level': 'warning',
+                        'icon': '🔔',
+                        'title': f'{stype} due soon',
+                        'message': f"{vehicle_label} — {stype} is due in {days_until} day(s) on {due.strftime('%d %b %Y')}.",
+                        'vehicle': vehicle_label,
+                        'vehicle_id': vid,
+                        'due_date': due
+                    })
+                elif days_until <= 30:
+                    maintenance_alerts.append({
+                        'level': 'info',
+                        'icon': '📅',
+                        'title': f'{stype} upcoming',
+                        'message': f"{vehicle_label} — {stype} due in {days_until} days.",
+                        'vehicle': vehicle_label,
+                        'vehicle_id': vid,
+                        'due_date': due
+                    })
+    
+    # Smart recommendation based on mileage (if next_due_mileage available)
+    cursor.execute("""
+        SELECT DISTINCT v.id, v.make, v.model, v.registration_number,
+               MAX(mr.mileage_km) as last_mileage,
+               MAX(mr.next_due_mileage_km) as next_due_mileage,
+               MAX(mr.service_type) as last_service
+        FROM vehicles v
+        JOIN maintenance_records mr ON v.id = mr.vehicle_id
+        WHERE v.user_id = %s
+        GROUP BY v.id, v.make, v.model, v.registration_number
+    """, (customer_id,))
+    mileage_info = cursor.fetchall()
+    
+    for m in mileage_info:
+        if m['next_due_mileage'] and m['last_mileage']:
+            remaining = m['next_due_mileage'] - m['last_mileage']
+            if remaining <= 1000:
+                vehicle_label = f"{m['make']} {m['model']}"
+                if m['registration_number']:
+                    vehicle_label += f" ({m['registration_number']})"
+                maintenance_alerts.append({
+                    'level': 'warning' if remaining > 0 else 'danger',
+                    'icon': '🛣️',
+                    'title': f"{m['last_service'] or 'Service'} by mileage",
+                    'message': f"{vehicle_label} — Next service due in {max(remaining, 0)} km (at {m['next_due_mileage']} km).",
+                    'vehicle': vehicle_label,
+                    'vehicle_id': m['id']
+                })
+    
+    # Sort alerts by severity
+    severity_order = {'danger': 0, 'warning': 1, 'info': 2}
+    maintenance_alerts.sort(key=lambda x: severity_order.get(x['level'], 3))
+    
+    # ==================== END MAINTENANCE ALERTS ====================
     
     cursor.close()
     conn.close()
@@ -305,8 +496,8 @@ def customer_dashboard():
                          recent_orders=recent_orders,
                          order_count=order_count,
                          available_products=available_products,
-                         upcoming_bookings=upcoming_bookings)
-
+                         upcoming_bookings=upcoming_bookings,
+                         maintenance_alerts=maintenance_alerts)
 # ------------------ Vendor Dashboard ------------------
 @app.route('/vendor/dashboard')
 def vendor_dashboard():
@@ -361,7 +552,32 @@ def vendor_dashboard():
         LIMIT 10
     """, (vendor_id,))
     recent_orders = cursor.fetchall()
+        # Recent reviews for this vendor's products
+    cursor.execute("""
+        SELECT r.*, u.name as customer_name, p.name as product_name
+        FROM reviews r
+        JOIN users u ON r.user_id = u.id
+        JOIN products p ON r.product_id = p.id
+        WHERE p.vendor_id = %s
+        ORDER BY r.created_at DESC
+        LIMIT 5
+    """, (vendor_id,))
+    vendor_reviews = cursor.fetchall()
     
+    # Average rating across all vendor's products
+    cursor.execute("""
+        SELECT AVG(r.rating) as avg_rating, COUNT(*) as total_reviews
+        FROM reviews r
+        JOIN products p ON r.product_id = p.id
+        WHERE p.vendor_id = %s
+    """, (vendor_id,))
+    review_summary = cursor.fetchone()  
+        # Low stock alert
+    cursor.execute("""
+        SELECT COUNT(*) as count FROM products 
+        WHERE vendor_id = %s AND stock_quantity < 10 AND is_approved = 1
+    """, (vendor_id,))
+    low_stock_count = cursor.fetchone()['count']
     cursor.close()
     conn.close()
     
@@ -371,7 +587,9 @@ def vendor_dashboard():
                          pending_products=pending_products,
                          total_orders=total_orders,
                          products=products,
-                         recent_orders=recent_orders)
+                         recent_orders=recent_orders,
+                         vendor_reviews=vendor_reviews,
+                         review_summary=review_summary)
 
 # ------------------ Service Center Dashboard ------------------
 # ------------------ Service Center Dashboard ------------------
@@ -388,7 +606,7 @@ def service_center_dashboard():
     cursor.execute("SELECT * FROM service_center_details WHERE user_id = %s", (center_id,))
     center = cursor.fetchone()
     
-    # Stats
+    # ---- Stats ----
     cursor.execute("SELECT COUNT(*) as total FROM service_bookings WHERE station_id = %s", (center_id,))
     total_bookings = cursor.fetchone()['total']
     
@@ -401,14 +619,62 @@ def service_center_dashboard():
     cursor.execute("SELECT COUNT(*) as total FROM service_bookings WHERE station_id = %s AND status = 'completed'", (center_id,))
     completed = cursor.fetchone()['total']
     
-    # All bookings
+    # ---- Review stats ----
     cursor.execute("""
-        SELECT sb.*, u.name as customer_name, u.phone as customer_phone,
+        SELECT AVG(rating) as avg_rating, COUNT(*) as review_count
+        FROM reviews WHERE station_id = %s
+    """, (center_id,))
+    review_stats = cursor.fetchone()
+    avg_rating = review_stats['avg_rating'] or 0
+    review_count = review_stats['review_count'] or 0
+    
+    # Rating distribution
+    cursor.execute("""
+        SELECT rating, COUNT(*) as count FROM reviews 
+        WHERE station_id = %s GROUP BY rating
+    """, (center_id,))
+    distribution_rows = cursor.fetchall()
+    rating_distribution = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+    for row in distribution_rows:
+        rating_distribution[row['rating']] = row['count']
+    
+    # ---- Latest 5 reviews ----
+    cursor.execute("""
+        SELECT r.*, u.name as customer_name
+        FROM reviews r
+        JOIN users u ON r.user_id = u.id
+        WHERE r.station_id = %s
+        ORDER BY r.created_at DESC
+        LIMIT 5
+    """, (center_id,))
+    latest_reviews = cursor.fetchall()
+    
+    # ---- Booking filters ----
+    status_filter = request.args.get('status', 'all')
+    date_filter = request.args.get('date', 'all')
+    
+    query = """
+        SELECT sb.*, u.name as customer_name, u.phone as customer_phone, u.email as customer_email,
                v.make, v.model, v.registration_number, v.year as vehicle_year, v.fuel_type
         FROM service_bookings sb
         JOIN users u ON sb.customer_id = u.id
         JOIN vehicles v ON sb.vehicle_id = v.id
         WHERE sb.station_id = %s
+    """
+    params = [center_id]
+    
+    if status_filter != 'all':
+        query += " AND sb.status = %s"
+        params.append(status_filter)
+    
+    if date_filter == 'today':
+        query += " AND DATE(sb.booking_date) = CURDATE()"
+    elif date_filter == 'week':
+        query += " AND sb.booking_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)"
+    elif date_filter == 'month':
+        query += " AND MONTH(sb.booking_date) = MONTH(CURDATE()) AND YEAR(sb.booking_date) = YEAR(CURDATE())"
+    
+    query += """
         ORDER BY 
             CASE sb.status 
                 WHEN 'booked' THEN 1 
@@ -416,8 +682,10 @@ def service_center_dashboard():
                 WHEN 'completed' THEN 3
                 ELSE 4
             END,
-            sb.booking_date ASC
-    """, (center_id,))
+            sb.booking_date DESC
+    """
+    
+    cursor.execute(query, params)
     bookings = cursor.fetchall()
     
     cursor.close()
@@ -429,8 +697,202 @@ def service_center_dashboard():
                          pending_bookings=pending_bookings,
                          in_progress=in_progress,
                          completed=completed,
-                         bookings=bookings)
+                         avg_rating=avg_rating,
+                         review_count=review_count,
+                         rating_distribution=rating_distribution,
+                         latest_reviews=latest_reviews,
+                         bookings=bookings,
+                         status_filter=status_filter,
+                         date_filter=date_filter)
 
+
+# ------------------ Service Center: Reviews Page ------------------
+@app.route('/service_center/reviews')
+def service_center_reviews():
+    if 'user_id' not in session or session.get('role') != 'service_center':
+        return redirect(url_for('home'))
+    
+    center_id = session['user_id']
+    rating_filter = request.args.get('rating', 'all')
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT * FROM service_center_details WHERE user_id = %s", (center_id,))
+    center = cursor.fetchone()
+    
+    # Stats
+    cursor.execute("""
+        SELECT AVG(rating) as avg_rating, COUNT(*) as review_count
+        FROM reviews WHERE station_id = %s
+    """, (center_id,))
+    stats = cursor.fetchone()
+    
+    cursor.execute("""
+        SELECT rating, COUNT(*) as count FROM reviews 
+        WHERE station_id = %s GROUP BY rating
+    """, (center_id,))
+    dist_rows = cursor.fetchall()
+    rating_distribution = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+    for row in dist_rows:
+        rating_distribution[row['rating']] = row['count']
+    
+    # Filtered reviews list
+    query = """
+        SELECT r.*, u.name as customer_name
+        FROM reviews r
+        JOIN users u ON r.user_id = u.id
+        WHERE r.station_id = %s
+    """
+    params = [center_id]
+    
+    if rating_filter != 'all':
+        query += " AND r.rating = %s"
+        params.append(rating_filter)
+    
+    query += " ORDER BY r.created_at DESC"
+    
+    cursor.execute(query, params)
+    reviews = cursor.fetchall()
+    
+    cursor.close()
+    conn.close()
+    
+    return render_template('service_center/reviews.html',
+                         center=center,
+                         stats=stats,
+                         rating_distribution=rating_distribution,
+                         reviews=reviews,
+                         rating_filter=rating_filter)
+
+
+# ------------------ Service Center: Maintenance History ------------------
+# ------------------ Service Center: Maintenance History ------------------
+@app.route('/service_center/maintenance')
+def service_center_maintenance():
+    if 'user_id' not in session or session.get('role') != 'service_center':
+        return redirect(url_for('home'))
+    
+    center_id = session['user_id']
+    month_filter = request.args.get('month', 'all')
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT * FROM service_center_details WHERE user_id = %s", (center_id,))
+    center = cursor.fetchone()
+    
+    # ---- Maintenance records with optional month filter ----
+    query = """
+        SELECT mr.*, v.make, v.model, v.registration_number,
+               u.name as customer_name, u.phone as customer_phone
+        FROM maintenance_records mr
+        JOIN vehicles v ON mr.vehicle_id = v.id
+        JOIN users u ON v.user_id = u.id
+        WHERE mr.performed_by_station_id = %s
+    """
+    params = [center_id]
+    
+    if month_filter != 'all':
+        query += " AND CONCAT(YEAR(mr.created_at), '-', LPAD(MONTH(mr.created_at), 2, '0')) = %s"
+        params.append(month_filter)
+    
+    query += " ORDER BY mr.created_at DESC"
+    
+    cursor.execute(query, params)
+    records = cursor.fetchall()
+    
+    # ---- Stats ----
+    cursor.execute("""
+        SELECT COUNT(*) as total, COALESCE(SUM(cost), 0) as total_revenue
+        FROM maintenance_records WHERE performed_by_station_id = %s
+    """, (center_id,))
+    stats = cursor.fetchone()
+    
+    # ---- Available months for filter (using %% for literal percent) ----
+    cursor.execute("""
+        SELECT DISTINCT DATE_FORMAT(created_at, '%%Y-%%m') as month
+        FROM maintenance_records WHERE performed_by_station_id = %s
+        ORDER BY month DESC
+    """, (center_id,))
+    available_months = cursor.fetchall()
+    
+    cursor.close()
+    conn.close()
+    
+    return render_template('service_center/maintenance.html',
+                         center=center,
+                         records=records,
+                         stats=stats,
+                         available_months=available_months,
+                         month_filter=month_filter)
+    
+# ------------------ Service Center: Analytics ------------------
+@app.route('/service_center/analytics')
+def service_center_analytics():
+    if 'user_id' not in session or session.get('role') != 'service_center':
+        return redirect(url_for('home'))
+    
+    center_id = session['user_id']
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT * FROM service_center_details WHERE user_id = %s", (center_id,))
+    center = cursor.fetchone()
+    
+    # Overall stats
+    cursor.execute("""
+        SELECT COUNT(*) as total_services, COALESCE(SUM(cost), 0) as total_revenue,
+               COALESCE(AVG(cost), 0) as avg_cost
+        FROM maintenance_records WHERE performed_by_station_id = %s
+    """, (center_id,))
+    overall = cursor.fetchone()
+    
+    # Monthly revenue (last 6 months) — NOTE: %% used for literal % in DATE_FORMAT
+    cursor.execute("""
+        SELECT DATE_FORMAT(created_at, '%%b %%Y') as month,
+               DATE_FORMAT(created_at, '%%Y-%%m') as sort_key,
+               COUNT(*) as services, COALESCE(SUM(cost), 0) as revenue
+        FROM maintenance_records 
+        WHERE performed_by_station_id = %s 
+          AND created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+        GROUP BY sort_key, month
+        ORDER BY sort_key
+    """, (center_id,))
+    monthly = cursor.fetchall()
+    
+    # Service type distribution
+    cursor.execute("""
+        SELECT service_type, COUNT(*) as count, COALESCE(SUM(cost), 0) as revenue
+        FROM maintenance_records 
+        WHERE performed_by_station_id = %s AND service_type IS NOT NULL
+        GROUP BY service_type
+        ORDER BY count DESC
+        LIMIT 6
+    """, (center_id,))
+    service_types = cursor.fetchall()
+    
+    # Recent completions
+    cursor.execute("""
+        SELECT mr.*, v.make, v.model, u.name as customer_name
+        FROM maintenance_records mr
+        JOIN vehicles v ON mr.vehicle_id = v.id
+        JOIN users u ON v.user_id = u.id
+        WHERE mr.performed_by_station_id = %s
+        ORDER BY mr.created_at DESC
+        LIMIT 10
+    """, (center_id,))
+    recent = cursor.fetchall()
+    
+    cursor.close()
+    conn.close()
+    
+    return render_template('service_center/analytics.html',
+                         center=center,
+                         overall=overall,
+                         monthly=monthly,
+                         service_types=service_types,
+                         recent=recent)
 
 # ------------------ Service Center: Booking Action ------------------
 @app.route('/service_center/booking/<int:booking_id>/<action>')
@@ -712,6 +1174,22 @@ def admin_vendor_action(vendor_id, action):
         cursor.execute("UPDATE vendor_details SET is_approved = 1 WHERE user_id = %s", (vendor_id,))
         cursor.execute("UPDATE users SET is_verified = 1 WHERE id = %s AND role = 'vendor'", (vendor_id,))
         flash('Vendor approved successfully!', 'success')
+                # Send approval email
+        try:
+            cursor.execute("SELECT email, name FROM users WHERE id = %s", (vendor_id,))
+            v = cursor.fetchone()
+            if v and v['email']:
+                body = f"""
+                <div style="font-family:Arial,sans-serif; padding:20px;">
+                    <h2 style="color:#146c43;">Welcome to PartMatch! 🎉</h2>
+                    <p>Hi {v['name']},</p>
+                    <p>Your vendor account has been <strong>approved</strong>. You can now log in and start listing products.</p>
+                    <a href="http://localhost:5000/" style="display:inline-block; padding:12px 24px; background:#146c43; color:#fff; text-decoration:none; border-radius:8px;">Log In Now</a>
+                </div>
+                """
+                send_email(v['email'], 'Vendor Account Approved — PartMatch', body)
+        except Exception as e:
+            print(f"Email error: {e}")
     elif action == 'reject':
         cursor.execute("DELETE FROM vendor_details WHERE user_id = %s", (vendor_id,))
         cursor.execute("DELETE FROM users WHERE id = %s AND role = 'vendor'", (vendor_id,))
@@ -966,8 +1444,135 @@ def vendor_manage_inventory():
 @app.route('/vendor/orders')
 def vendor_orders():
     if 'user_id' not in session or session.get('role') != 'vendor':
+        flash('Please login as a vendor.', 'warning')
         return redirect(url_for('home'))
-    return render_template('vendor/orders.html')
+    
+    vendor_id = session['user_id']
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Get all orders containing this vendor's products
+    cursor.execute("""
+        SELECT DISTINCT o.id, o.order_status, o.total_amount, o.shipping_address, o.created_at,
+               u.name as customer_name, u.email as customer_email, u.phone as customer_phone
+        FROM orders o
+        JOIN order_items oi ON o.id = oi.order_id
+        JOIN products p ON oi.product_id = p.id
+        JOIN users u ON o.customer_id = u.id
+        WHERE p.vendor_id = %s
+        ORDER BY o.created_at DESC
+    """, (vendor_id,))
+    orders = cursor.fetchall()
+    
+    # For each order, fetch ONLY this vendor's items
+    for order in orders:
+        cursor.execute("""
+            SELECT oi.id, oi.quantity, oi.price_per_unit,
+                   p.name as product_name, p.brand, p.image, p.part_number
+            FROM order_items oi
+            JOIN products p ON oi.product_id = p.id
+            WHERE oi.order_id = %s AND p.vendor_id = %s
+        """, (order['id'], vendor_id))
+        order['vendor_items'] = cursor.fetchall()
+        
+        # Calculate vendor's subtotal (only their items)
+        order['vendor_subtotal'] = sum(
+            float(item['quantity']) * float(item['price_per_unit']) 
+            for item in order['vendor_items']
+        )
+        order['item_count'] = len(order['vendor_items'])
+    
+    # Stats
+    cursor.execute("""
+        SELECT 
+            COUNT(DISTINCT CASE WHEN o.order_status = 'confirmed' THEN o.id END) as pending_count,
+            COUNT(DISTINCT CASE WHEN o.order_status = 'shipped' THEN o.id END) as shipped_count,
+            COUNT(DISTINCT CASE WHEN o.order_status = 'delivered' THEN o.order_status END) as delivered_count
+        FROM orders o
+        JOIN order_items oi ON o.id = oi.order_id
+        JOIN products p ON oi.product_id = p.id
+        WHERE p.vendor_id = %s
+    """, (vendor_id,))
+    stats = cursor.fetchone()
+    
+    cursor.close()
+    conn.close()
+    
+    return render_template('vendor/orders.html',
+                         orders=orders,
+                         pending_count=stats['pending_count'] or 0,
+                         shipped_count=stats['shipped_count'] or 0,
+                         delivered_count=stats['delivered_count'] or 0)
+
+# ------------------ Vendor: Update Order Status ------------------
+@app.route('/vendor/order/<int:order_id>/<action>', methods=['POST'])
+def vendor_update_order_status(order_id, action):
+    if 'user_id' not in session or session.get('role') != 'vendor':
+        flash('Please login as a vendor.', 'warning')
+        return redirect(url_for('home'))
+    
+    vendor_id = session['user_id']
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Verify this vendor has items in the order
+    cursor.execute("""
+        SELECT COUNT(*) as count FROM order_items oi
+        JOIN products p ON oi.product_id = p.id
+        WHERE oi.order_id = %s AND p.vendor_id = %s
+    """, (order_id, vendor_id))
+    check = cursor.fetchone()
+    
+    if not check or check['count'] == 0:
+        cursor.close()
+        conn.close()
+        flash('Order not found or does not belong to your store.', 'danger')
+        return redirect(url_for('vendor_orders'))
+    
+    # Update based on action
+    status_map = {
+        'confirm': 'confirmed',
+        'ship': 'shipped',
+        'deliver': 'delivered',
+    }
+    
+    if action in status_map:
+        new_status = status_map[action]
+        cursor.execute("UPDATE orders SET order_status = %s WHERE id = %s", (new_status, order_id))
+        conn.commit()
+        flash(f'Order #{order_id} marked as {new_status}.', 'success')
+        
+        # Notify customer via email
+        try:
+            cursor.execute("""
+                SELECT u.email, u.name FROM orders o
+                JOIN users u ON o.customer_id = u.id WHERE o.id = %s
+            """, (order_id,))
+            cust = cursor.fetchone()
+            if cust and cust['email']:
+                status_msg = {
+                    'confirmed': 'Your order has been confirmed by the vendor.',
+                    'shipped': 'Your order has been shipped!',
+                    'delivered': 'Your order has been delivered. Enjoy!',
+                }.get(new_status, '')
+                body = f"""
+                <div style="font-family:Arial,sans-serif; padding:20px;">
+                    <h2 style="color:#146c43;">Order Update 📦</h2>
+                    <p>Hi {cust['name']},</p>
+                    <p>Order <strong>#{order_id}</strong> is now <strong>{new_status.upper()}</strong>.</p>
+                    <p>{status_msg}</p>
+                    <a href="http://localhost:5000/customer/orders" style="display:inline-block; padding:12px 24px; background:#146c43; color:#fff; text-decoration:none; border-radius:8px;">View Order</a>
+                </div>
+                """
+                send_email(cust['email'], f'Order #{order_id} — {new_status.title()} — PartMatch', body)
+        except Exception as e:
+            print(f"Email error: {e}")
+    else:
+        flash('Invalid action.', 'danger')
+    
+    cursor.close()
+    conn.close()
+    return redirect(url_for('vendor_orders'))
 
 # ------------------ Vendor: Edit Product ------------------
 @app.route('/vendor/edit-product/<int:product_id>', methods=['GET', 'POST'])
@@ -1177,7 +1782,6 @@ def customer_delete_vehicle(vehicle_id):
     flash('Vehicle removed.', 'info')
     return redirect(url_for('customer_vehicles'))
 
-# ------------------ Customer: Search Parts ------------------
 @app.route('/customer/search')
 def customer_search_parts():
     if 'user_id' not in session or session.get('role') != 'customer':
@@ -1187,24 +1791,24 @@ def customer_search_parts():
     customer_id = session['user_id']
     search = request.args.get('q', '').strip()
     category_filter = request.args.get('category', '')
+    sort_by = request.args.get('sort', 'newest')
     
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # Get categories for the filter dropdown
     cursor.execute("SELECT * FROM product_categories ORDER BY name")
     categories = cursor.fetchall()
     
-    # Get customer's vehicles for compatibility check
     cursor.execute("SELECT make, model FROM vehicles WHERE user_id = %s", (customer_id,))
     user_vehicles = cursor.fetchall()
     
-    # Build the products query
     query = """
         SELECT p.*, 
                pc.name as category_name,
                u.name as vendor_name,
-               vd.business_name
+               vd.business_name,
+               (SELECT AVG(rating) FROM reviews WHERE product_id = p.id) as avg_rating,
+               (SELECT COUNT(*) FROM reviews WHERE product_id = p.id) as review_count
         FROM products p
         LEFT JOIN product_categories pc ON p.category_id = pc.id
         JOIN users u ON p.vendor_id = u.id
@@ -1222,12 +1826,21 @@ def customer_search_parts():
         query += " AND p.category_id = %s"
         params.append(category_filter)
     
-    query += " ORDER BY p.created_at DESC"
+    # Sort options
+    if sort_by == 'price_low':
+        query += " ORDER BY p.price ASC"
+    elif sort_by == 'price_high':
+        query += " ORDER BY p.price DESC"
+    elif sort_by == 'rating':
+        query += " ORDER BY avg_rating DESC, review_count DESC"
+    elif sort_by == 'oldest':
+        query += " ORDER BY p.created_at ASC"
+    else:  # newest
+        query += " ORDER BY p.created_at DESC"
     
     cursor.execute(query, params)
     products = cursor.fetchall()
     
-    # Add compatibility flag to each product
     for product in products:
         product['is_compatible'] = check_compatibility(product.get('compatibility'), user_vehicles)
     
@@ -1239,7 +1852,44 @@ def customer_search_parts():
                          categories=categories,
                          search=search,
                          category_filter=category_filter,
+                         sort_by=sort_by,
                          vehicle_count=len(user_vehicles))
+    
+
+# ------------------ Customer: Search Suggestions API ------------------
+@app.route('/customer/api/search-suggestions')
+def customer_search_suggestions():
+    if 'user_id' not in session or session.get('role') != 'customer':
+        return {'suggestions': []}
+    
+    q = request.args.get('q', '').strip()
+    if len(q) < 2:
+        return {'suggestions': []}
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    like = f"%{q}%"
+    cursor.execute("""
+        SELECT DISTINCT name, brand FROM products 
+        WHERE is_approved = 1 AND stock_quantity > 0 
+          AND (name LIKE %s OR brand LIKE %s)
+        LIMIT 8
+    """, (like, like))
+    rows = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    
+    suggestions = []
+    seen = set()
+    for row in rows:
+        if row['name'] and row['name'] not in seen:
+            suggestions.append(row['name'])
+            seen.add(row['name'])
+        if row['brand'] and row['brand'] not in seen:
+            suggestions.append(row['brand'])
+            seen.add(row['brand'])
+    
+    return {'suggestions': suggestions[:8]}
 
 # ------------------ Customer: Product Detail ------------------
 @app.route('/customer/product/<int:product_id>')
@@ -1295,6 +1945,35 @@ def customer_product_detail(product_id):
     """, (product['category_id'], product_id))
     related_products = cursor.fetchall()
     
+    # Fetch reviews for this product
+    cursor.execute("""
+        SELECT r.*, u.name as user_name
+        FROM reviews r
+        JOIN users u ON r.user_id = u.id
+        WHERE r.product_id = %s
+        ORDER BY r.created_at DESC
+    """, (product_id,))
+    reviews = cursor.fetchall()
+    
+    # Average rating
+    cursor.execute("""
+        SELECT AVG(rating) as avg_rating, COUNT(*) as review_count
+        FROM reviews WHERE product_id = %s
+    """, (product_id,))
+    rating_info = cursor.fetchone()
+    
+    # Check if this customer can review (purchased + delivered)
+    cursor.execute("""
+        SELECT COUNT(*) as count FROM order_items oi
+        JOIN orders o ON oi.order_id = o.id
+        WHERE o.customer_id = %s AND oi.product_id = %s AND o.order_status = 'delivered'
+    """, (customer_id, product_id))
+    can_review = cursor.fetchone()['count'] > 0
+    
+    # Check if already reviewed
+    cursor.execute("SELECT * FROM reviews WHERE user_id = %s AND product_id = %s", (customer_id, product_id))
+    my_review = cursor.fetchone()
+    
     cursor.close()
     conn.close()
     
@@ -1302,8 +1981,11 @@ def customer_product_detail(product_id):
                          product=product,
                          compat=compat,
                          related_products=related_products,
-                         vehicle_count=len(user_vehicles))
-
+                         vehicle_count=len(user_vehicles),
+                         reviews=reviews,
+                         rating_info=rating_info,
+                         can_review=can_review,
+                         my_review=my_review)
 
 # ------------------ Customer: Bookings ------------------
 # ------------------ Customer: Bookings ------------------
@@ -1338,9 +2020,12 @@ def customer_bookings():
         return redirect(url_for('customer_bookings'))
     
     # Get approved service centers
+        # Get approved service centers WITH ratings
     cursor.execute("""
         SELECT sc.user_id as id, sc.center_name, sc.address, sc.city, sc.specialization,
-               sc.open_time, sc.close_time, u.phone, u.email
+               sc.open_time, sc.close_time, u.phone, u.email,
+               (SELECT AVG(rating) FROM reviews WHERE station_id = sc.user_id) as avg_rating,
+               (SELECT COUNT(*) FROM reviews WHERE station_id = sc.user_id) as review_count
         FROM service_center_details sc
         JOIN users u ON sc.user_id = u.id
         WHERE sc.is_approved = 1
@@ -1649,6 +2334,27 @@ def customer_verify_payment():
         conn.close()
         
         flash(f'Payment successful! Order #{new_order_id} placed.', 'success')
+                # Send order confirmation email
+        try:
+            cursor.execute("SELECT email FROM users WHERE id = %s", (customer_id,))
+            cust = cursor.fetchone()
+            if cust and cust['email']:
+                email_body = f"""
+                <div style="font-family:Arial,sans-serif; max-width:600px; margin:0 auto; padding:20px; background:#f4faf5;">
+                    <div style="background:#fff; padding:30px; border-radius:12px;">
+                        <h1 style="color:#146c43; font-family:Georgia,serif;">Order Confirmed! 🎉</h1>
+                        <p>Thank you for your order <strong>#{new_order_id}</strong>.</p>
+                        <p>Amount: <strong>₹{subtotal:.0f}</strong></p>
+                        <p><strong>Shipping Address:</strong><br>{shipping_address}</p>
+                        <p>Track your order from your dashboard.</p>
+                        <a href="http://localhost:5000/customer/orders" style="display:inline-block; padding:12px 24px; background:#146c43; color:#fff; text-decoration:none; border-radius:8px; margin-top:16px;">View My Orders</a>
+                        <p style="margin-top:24px; color:#888; font-size:12px;">— PartMatch Team</p>
+                    </div>
+                </div>
+                """
+                send_email(cust['email'], f'Order #{new_order_id} Confirmed — PartMatch', email_body)
+        except Exception as e:
+            print(f"Email error: {e}")
         return redirect(url_for('customer_orders'))
     
     except Exception as e:
@@ -1737,6 +2443,331 @@ def customer_invoice(order_id):
     return render_template('customer/invoice.html',
                          order=order,
                          items=items)
+
+# ==================== REVIEWS & RATINGS ====================
+
+# ------------------ Customer: Submit Product Review ------------------
+@app.route('/customer/product/<int:product_id>/review', methods=['POST'])
+def customer_submit_review(product_id):
+    if 'user_id' not in session or session.get('role') != 'customer':
+        flash('Please login as a customer.', 'warning')
+        return redirect(url_for('home'))
+    
+    customer_id = session['user_id']
+    rating = request.form.get('rating')
+    comment = request.form.get('comment', '').strip()
+    
+    if not rating or not (1 <= int(rating) <= 5):
+        flash('Please select a valid rating.', 'danger')
+        return redirect(url_for('customer_product_detail', product_id=product_id))
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Verify the customer has purchased this product (order delivered)
+    cursor.execute("""
+        SELECT COUNT(*) as count FROM order_items oi
+        JOIN orders o ON oi.order_id = o.id
+        WHERE o.customer_id = %s AND oi.product_id = %s AND o.order_status = 'delivered'
+    """, (customer_id, product_id))
+    purchased = cursor.fetchone()['count']
+    
+    if purchased == 0:
+        cursor.close()
+        conn.close()
+        flash('You can only review products you have purchased and received.', 'warning')
+        return redirect(url_for('customer_product_detail', product_id=product_id))
+    
+    # Check if already reviewed
+    cursor.execute("SELECT id FROM reviews WHERE user_id = %s AND product_id = %s", (customer_id, product_id))
+    existing = cursor.fetchone()
+    
+    if existing:
+        cursor.execute("UPDATE reviews SET rating=%s, comment=%s WHERE id=%s", (rating, comment, existing['id']))
+        flash('Your review has been updated.', 'success')
+    else:
+        cursor.execute("""
+            INSERT INTO reviews (user_id, product_id, rating, comment)
+            VALUES (%s, %s, %s, %s)
+        """, (customer_id, product_id, rating, comment))
+        flash('Thank you for your review!', 'success')
+    
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return redirect(url_for('customer_product_detail', product_id=product_id))
+
+
+# ------------------ Customer: Submit Service Center Review ------------------
+@app.route('/customer/booking/<int:booking_id>/review', methods=['POST'])
+def customer_submit_center_review(booking_id):
+    if 'user_id' not in session or session.get('role') != 'customer':
+        flash('Please login as a customer.', 'warning')
+        return redirect(url_for('home'))
+    
+    customer_id = session['user_id']
+    rating = request.form.get('rating')
+    comment = request.form.get('comment', '').strip()
+    
+    if not rating or not (1 <= int(rating) <= 5):
+        flash('Please select a valid rating.', 'danger')
+        return redirect(url_for('customer_bookings'))
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Verify the booking belongs to this customer and is completed
+    cursor.execute("""
+        SELECT * FROM service_bookings 
+        WHERE id = %s AND customer_id = %s AND status = 'completed'
+    """, (booking_id, customer_id))
+    booking = cursor.fetchone()
+    
+    if not booking:
+        cursor.close()
+        conn.close()
+        flash('You can only review completed services.', 'warning')
+        return redirect(url_for('customer_bookings'))
+    
+    station_id = booking['station_id']
+    
+    # Check if already reviewed
+    cursor.execute("SELECT id FROM reviews WHERE user_id = %s AND station_id = %s", (customer_id, station_id))
+    existing = cursor.fetchone()
+    
+    if existing:
+        cursor.execute("UPDATE reviews SET rating=%s, comment=%s WHERE id=%s", (rating, comment, existing['id']))
+        flash('Your review has been updated.', 'success')
+    else:
+        cursor.execute("""
+            INSERT INTO reviews (user_id, station_id, rating, comment)
+            VALUES (%s, %s, %s, %s)
+        """, (customer_id, station_id, rating, comment))
+        flash('Thank you for reviewing the service center!', 'success')
+    
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return redirect(url_for('customer_bookings'))
+
+# ------------------ Customer: Cancel Order ------------------
+@app.route('/customer/order/<int:order_id>/cancel', methods=['POST'])
+def customer_cancel_order(order_id):
+    if 'user_id' not in session or session.get('role') != 'customer':
+        flash('Please login as a customer.', 'warning')
+        return redirect(url_for('home'))
+    
+    customer_id = session['user_id']
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Verify order belongs to customer and is still cancellable
+    cursor.execute("""
+        SELECT * FROM orders WHERE id = %s AND customer_id = %s AND order_status IN ('pending', 'confirmed')
+    """, (order_id, customer_id))
+    order = cursor.fetchone()
+    
+    if not order:
+        cursor.close()
+        conn.close()
+        flash('Order cannot be cancelled. Only pending or confirmed orders can be cancelled.', 'warning')
+        return redirect(url_for('customer_orders'))
+    
+    try:
+        # Restore stock for each item
+        cursor.execute("SELECT product_id, quantity FROM order_items WHERE order_id = %s", (order_id,))
+        items = cursor.fetchall()
+        
+        for item in items:
+            cursor.execute("""
+                UPDATE products SET stock_quantity = stock_quantity + %s WHERE id = %s
+            """, (item['quantity'], item['product_id']))
+        
+        # Update order status
+        cursor.execute("UPDATE orders SET order_status = 'cancelled' WHERE id = %s", (order_id,))
+        conn.commit()
+        
+        flash(f'Order #{order_id} has been cancelled. Stock restored.', 'success')
+    except Exception as e:
+        conn.rollback()
+        flash(f'Error cancelling order: {str(e)}', 'danger')
+    
+    cursor.close()
+    conn.close()
+    return redirect(url_for('customer_orders'))
+
+# ==================== PASSWORD RESET ====================
+password_reset_tokens = {}
+
+@app.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip()
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, name FROM users WHERE email = %s", (email,))
+        user = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        
+        if user:
+            token = secrets.token_urlsafe(32)
+            password_reset_tokens[token] = {
+                'user_id': user['id'],
+                'expires': datetime.now() + timedelta(hours=1)
+            }
+            
+            reset_link = f"http://localhost:5000/reset-password/{token}"
+            body = f"""
+            <div style="font-family:Arial,sans-serif; max-width:600px; margin:0 auto; padding:20px;">
+                <div style="background:#fff; padding:30px; border-radius:12px; border:1px solid #d9e9dd;">
+                    <h2 style="color:#146c43;">Password Reset Request</h2>
+                    <p>Hi {user['name']},</p>
+                    <p>Click the button below to reset your password. This link expires in 1 hour.</p>
+                    <a href="{reset_link}" style="display:inline-block; padding:12px 24px; background:#146c43; color:#fff; text-decoration:none; border-radius:8px; margin-top:16px;">Reset My Password</a>
+                    <p style="margin-top:20px; color:#888; font-size:13px;">If you didn't request this, ignore this email.</p>
+                </div>
+            </div>
+            """
+            send_email(email, 'Reset Your PartMatch Password', body)
+            
+            # Print for local testing
+            print(f"\n=== PASSWORD RESET LINK for {email} ===\n{reset_link}\n")
+        
+        flash('If that email is registered, a reset link has been sent.', 'success')
+        return redirect(url_for('forgot_password'))
+    
+    return render_template('forgot_password.html')
+
+
+@app.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    data = password_reset_tokens.get(token)
+    
+    if not data or data['expires'] < datetime.now():
+        flash('Reset link is invalid or has expired.', 'danger')
+        return redirect(url_for('forgot_password'))
+    
+    if request.method == 'POST':
+        new_password = request.form.get('password')
+        confirm = request.form.get('confirm_password')
+        
+        if not new_password or len(new_password) < 6:
+            flash('Password must be at least 6 characters.', 'danger')
+            return redirect(url_for('reset_password', token=token))
+        
+        if new_password != confirm:
+            flash('Passwords do not match.', 'danger')
+            return redirect(url_for('reset_password', token=token))
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        hashed = generate_password_hash(new_password)
+        cursor.execute("UPDATE users SET password_hash = %s WHERE id = %s", (hashed, data['user_id']))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        password_reset_tokens.pop(token, None)
+        
+        flash('Password reset successfully! Please login.', 'success')
+        return redirect(url_for('home'))
+    
+    return render_template('reset_password.html', token=token)
+
+# ==================== ADMIN: ALL ORDERS ====================
+@app.route('/admin/orders')
+def admin_orders():
+    if 'user_id' not in session or session.get('role') != 'admin':
+        return redirect(url_for('home'))
+    
+    status_filter = request.args.get('status', 'all')
+    search = request.args.get('q', '').strip()
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    query = """
+        SELECT o.*, u.name as customer_name, u.email as customer_email, u.phone as customer_phone,
+               (SELECT COUNT(*) FROM order_items WHERE order_id = o.id) as item_count
+        FROM orders o
+        JOIN users u ON o.customer_id = u.id
+        WHERE 1=1
+    """
+    params = []
+    
+    if status_filter != 'all':
+        query += " AND o.order_status = %s"
+        params.append(status_filter)
+    
+    if search:
+        query += " AND (o.id LIKE %s OR u.name LIKE %s OR u.email LIKE %s)"
+        like = f"%{search}%"
+        params.extend([like, like, like])
+    
+    query += " ORDER BY o.created_at DESC"
+    
+    cursor.execute(query, params)
+    orders = cursor.fetchall()
+    
+    cursor.execute("""
+        SELECT 
+            COUNT(*) as total,
+            COALESCE(SUM(total_amount), 0) as total_revenue,
+            SUM(CASE WHEN order_status = 'delivered' THEN 1 ELSE 0 END) as delivered_count,
+            SUM(CASE WHEN order_status = 'pending' THEN 1 ELSE 0 END) as pending_count
+        FROM orders
+    """)
+    stats = cursor.fetchone()
+    
+    cursor.close()
+    conn.close()
+    
+    return render_template('admin/all_orders.html',
+                         orders=orders,
+                         stats=stats,
+                         status_filter=status_filter,
+                         search=search)
+
+# ==================== ADMIN: REVIEWS ====================
+@app.route('/admin/reviews')
+def admin_reviews():
+    if 'user_id' not in session or session.get('role') != 'admin':
+        return redirect(url_for('home'))
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT r.*, u.name as user_name, u.email as user_email,
+               p.name as product_name, sc.center_name as station_name
+        FROM reviews r
+        JOIN users u ON r.user_id = u.id
+        LEFT JOIN products p ON r.product_id = p.id
+        LEFT JOIN service_center_details sc ON r.station_id = sc.user_id
+        ORDER BY r.created_at DESC
+    """)
+    reviews = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    
+    return render_template('admin/all_reviews.html', reviews=reviews)
+
+
+@app.route('/admin/review/<int:review_id>/delete')
+def admin_delete_review(review_id):
+    if 'user_id' not in session or session.get('role') != 'admin':
+        return redirect(url_for('home'))
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM reviews WHERE id = %s", (review_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    
+    flash('Review deleted.', 'info')
+    return redirect(url_for('admin_reviews'))
 if __name__ == '__main__':
     app.run(debug=True)
     

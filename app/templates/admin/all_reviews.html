@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Reviews — PartMatch Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root{--ink:#0f1e17; --ink-soft:#4c5f56; --ink-faint:#8a9992; --green-700:#146c43; --green-050:#eefbf1; --line:#d9e9dd; --red:#e74c3c; --glass-bg:rgba(255,255,255,0.5); --glass-border:rgba(255,255,255,0.8); --glass-shadow:0 8px 32px -8px rgba(13,59,44,0.2);}
+        *{box-sizing:border-box; margin:0; padding:0;}
+        body{font-family:'Inter',sans-serif; color:var(--ink); min-height:100vh;}
+        h1,h2,h3{font-family:'Space Grotesk',sans-serif;}
+        .wrap{max-width:1280px; margin:0 auto; padding:0 32px;}
+        a{color:inherit; text-decoration:none;}
+        body::before{content:""; position:fixed; inset:0; z-index:-3; background: linear-gradient(180deg, #eefaf1 0%, #e2f4ea 45%, #edf8f0 100%);}
+        .topbar{background:rgba(255,255,255,0.72); backdrop-filter:blur(18px); border-bottom:1px solid var(--glass-border); padding:14px 0; position:sticky; top:0; z-index:100;}
+        .topbar-row{display:flex; align-items:center; gap:6px; overflow-x:auto;}
+        .brandmark{display:flex; align-items:center; gap:10px; margin-right:18px; font-family:'Space Grotesk',sans-serif; font-weight:700; flex-shrink:0;}
+        .navlink{display:flex; align-items:center; gap:7px; padding:9px 14px; font-size:13.5px; font-weight:600; color:var(--ink-soft); border-radius:8px; white-space:nowrap; flex-shrink:0;}
+        .navlink:hover{background:var(--green-050); color:var(--green-700);}
+        .navlink.active{background:var(--green-700); color:#fff;}
+        .nav-spacer{flex:1;}
+        .navlink.logout{color:var(--red); margin-left:auto;}
+        .page-head{padding:34px 0 20px;}
+        .eyebrow{display:inline-flex; gap:8px; font-family:'IBM Plex Mono',monospace; font-size:11.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--green-700); padding:6px 12px; border:1px dashed #b8d4c0; background:var(--green-050);}
+        .eyebrow::before{content:""; width:6px; height:6px; background:#178a4c; border-radius:50%;}
+        .page-head h1{font-size:28px; margin-top:10px;}
+        .review{background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:12px; padding:20px; margin-bottom:12px; backdrop-filter:blur(18px); display:flex; gap:16px; align-items:flex-start;}
+        .review-body{flex:1;}
+        .review-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;}
+        .review-user{font-weight:600; font-size:14px;}
+        .review-target{font-size:12px; color:var(--ink-faint); font-family:'IBM Plex Mono',monospace;}
+        .review-stars{color:#f5a623; font-size:16px;}
+        .review-text{font-size:13.5px; color:var(--ink-soft); line-height:1.6; margin-bottom:8px;}
+        .review-date{font-size:11px; color:var(--ink-faint); font-family:'IBM Plex Mono',monospace;}
+        .del-btn{background:transparent; color:var(--red); border:1.5px solid #f6c6c1; padding:8px 14px; border-radius:8px; font-weight:600; font-size:12px; cursor:pointer; text-decoration:none;}
+        .del-btn:hover{background:#fdecea;}
+        .empty{text-align:center; padding:60px 20px; color:var(--ink-faint);}
+    </style>
+</head>
+<body>
+<div class="topbar">
+    <div class="wrap topbar-row">
+        <div class="brandmark">⚙️ PartMatch Admin</div>
+        <a href="{{ url_for('admin_dashboard') }}" class="navlink">🏠 Dashboard</a>
+        <a href="{{ url_for('admin_users') }}" class="navlink">👥 Users</a>
+        <a href="{{ url_for('admin_vendors') }}" class="navlink">🏪 Vendors</a>
+        <a href="{{ url_for('admin_service_centers') }}" class="navlink">🔧 Centers</a>
+        <a href="{{ url_for('admin_products') }}" class="navlink">📦 Products</a>
+        <a href="{{ url_for('admin_orders') }}" class="navlink">🛒 Orders</a>
+        <a href="{{ url_for('admin_reviews') }}" class="navlink active">⭐ Reviews</a>
+        <a href="{{ url_for('admin_reports') }}" class="navlink">📈 Reports</a>
+        <div class="nav-spacer"></div>
+        <a href="{{ url_for('logout') }}" class="navlink logout">🚪 Logout</a>
+    </div>
+</div>
+<div class="wrap">
+    <div class="page-head">
+        <span class="eyebrow">Admin Panel</span>
+        <h1>All Reviews ({{ reviews|length }})</h1>
+    </div>
+    {% for r in reviews %}
+    <div class="review">
+        <div class="review-body">
+            <div class="review-head">
+                <div>
+                    <div class="review-user">{{ r.user_name }}</div>
+                    <div class="review-target">
+                        on {% if r.product_name %}📦 {{ r.product_name }}{% endif %}
+                        {% if r.station_name %}🔧 {{ r.station_name }}{% endif %}
+                    </div>
+                </div>
+                <div class="review-stars">
+                    {% for i in range(1, 6) %}{% if i <= r.rating %}★{% else %}☆{% endif %}{% endfor %}
+                </div>
+            </div>
+            {% if r.comment %}<div class="review-text">{{ r.comment }}</div>{% endif %}
+            <div class="review-date">{{ r.created_at.strftime('%d %b %Y · %I:%M %p') }}</div>
+        </div>
+        <a href="{{ url_for('admin_delete_review', review_id=r.id) }}" class="del-btn" onclick="return confirm('Delete this review?')">🗑️ Delete</a>
+    </div>
+    {% else %}
+    <div class="empty">No reviews yet.</div>
+    {% endfor %}
+</div>
+</body>
+</html>

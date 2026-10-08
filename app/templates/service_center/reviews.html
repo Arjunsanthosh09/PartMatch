@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reviews — PartMatch Service Center</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --ink: #0f1e17;
+        --ink-soft: #4c5f56;
+        --ink-faint: #8a9992;
+        --green-900: #0d3b2c;
+        --green-700: #146c43;
+        --green-600: #178a4c;
+        --green-500: #1fa85a;
+        --green-050: #eefbf1;
+        --line: #d9e9dd;
+        --line-strong: #b8d4c0;
+        --red: #e74c3c;
+        --glass-bg: rgba(255, 255, 255, 0.5);
+        --glass-bg-strong: rgba(255, 255, 255, 0.72);
+        --glass-border: rgba(255, 255, 255, 0.8);
+        --glass-shadow: 0 8px 32px -8px rgba(13, 59, 44, 0.2);
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: "Inter", sans-serif;
+        color: var(--ink);
+        min-height: 100vh;
+      }
+      h1,
+      h2,
+      h3,
+      h4 {
+        font-family: "Space Grotesk", sans-serif;
+      }
+      .wrap {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 0 32px;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: -3;
+        background:
+          radial-gradient(
+            ellipse 55% 45% at 6% -8%,
+            rgba(34, 197, 94, 0.3) 0%,
+            transparent 62%
+          ),
+          linear-gradient(180deg, #eefaf1 0%, #e2f4ea 45%, #edf8f0 100%);
+      }
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(16px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .anim {
+        animation: fadeUp 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+      }
+      .topbar {
+        background: var(--glass-bg-strong);
+        backdrop-filter: blur(18px);
+        border-bottom: 1px solid var(--glass-border);
+        padding: 14px 0;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+      .topbar-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        overflow-x: auto;
+        scrollbar-width: none;
+      }
+      .topbar-row::-webkit-scrollbar {
+        display: none;
+      }
+      .brandmark {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-right: 18px;
+        font-family: "Space Grotesk", sans-serif;
+        font-weight: 700;
+        flex-shrink: 0;
+      }
+      .navlink {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 9px 14px;
+        font-size: 13.5px;
+        font-weight: 600;
+        color: var(--ink-soft);
+        border-radius: 8px;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+      .navlink:hover {
+        background: var(--green-050);
+        color: var(--green-700);
+      }
+      .navlink.active {
+        background: var(--green-700);
+        color: #fff;
+      }
+      .nav-spacer {
+        flex: 1;
+      }
+      .navlink.logout {
+        color: var(--red);
+        margin-left: auto;
+      }
+
+      .page-head {
+        padding: 34px 0 20px;
+      }
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 11.5px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--green-700);
+        padding: 6px 12px;
+        border: 1px dashed var(--line-strong);
+        background: var(--green-050);
+      }
+      .eyebrow::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        background: var(--green-500);
+        border-radius: 50%;
+      }
+      .page-head h1 {
+        font-size: 28px;
+        margin-top: 10px;
+      }
+
+      .card {
+        padding: 28px;
+        border-radius: 16px;
+        background: var(--glass-bg);
+        backdrop-filter: blur(18px);
+        border: 1px solid var(--glass-border);
+        box-shadow: var(--glass-shadow);
+        margin-bottom: 24px;
+      }
+
+      .summary {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        gap: 32px;
+        align-items: center;
+      }
+      @media (max-width: 768px) {
+        .summary {
+          grid-template-columns: 1fr;
+        }
+      }
+      .big-rating {
+        text-align: center;
+        padding: 20px;
+        border-right: 1px dashed var(--line);
+      }
+      @media (max-width: 768px) {
+        .big-rating {
+          border-right: none;
+          border-bottom: 1px dashed var(--line);
+          padding-bottom: 20px;
+        }
+      }
+      .big-rating .num {
+        font-family: "Space Grotesk", sans-serif;
+        font-size: 64px;
+        font-weight: 700;
+        color: var(--green-700);
+        line-height: 1;
+      }
+      .big-rating .stars {
+        color: #f5a623;
+        font-size: 24px;
+        margin: 10px 0 6px;
+        letter-spacing: 3px;
+      }
+      .big-rating .count {
+        font-size: 12.5px;
+        color: var(--ink-faint);
+        font-family: "IBM Plex Mono", monospace;
+      }
+
+      .dist-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 10px;
+        font-size: 13px;
+      }
+      .dist-row .star-label {
+        font-family: "IBM Plex Mono", monospace;
+        width: 32px;
+        color: var(--ink-soft);
+      }
+      .dist-bar {
+        flex: 1;
+        height: 10px;
+        background: var(--green-050);
+        border-radius: 20px;
+        overflow: hidden;
+      }
+      .dist-bar .fill {
+        height: 100%;
+        background: #f5a623;
+        border-radius: 20px;
+      }
+      .dist-row .count {
+        width: 40px;
+        text-align: right;
+        color: var(--ink-soft);
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 12px;
+      }
+
+      .filter-bar {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+      }
+      .chip {
+        padding: 8px 16px;
+        border-radius: 20px;
+        border: 1px solid var(--line-strong);
+        background: rgba(255, 255, 255, 0.5);
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--ink-soft);
+        transition: all 0.2s;
+      }
+      .chip:hover {
+        border-color: var(--green-600);
+        color: var(--green-700);
+      }
+      .chip.active {
+        background: var(--green-700);
+        border-color: var(--green-700);
+        color: #fff;
+      }
+
+      .review {
+        padding: 20px;
+        background: rgba(255, 255, 255, 0.7);
+        border-radius: 12px;
+        border: 1px solid var(--line);
+        margin-bottom: 14px;
+      }
+      .review-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+      .review-user {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .review-avatar {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--green-500), var(--green-900));
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 16px;
+        font-family: "Space Grotesk", sans-serif;
+      }
+      .review-name {
+        font-weight: 600;
+        font-size: 14px;
+      }
+      .review-date {
+        font-size: 11.5px;
+        color: var(--ink-faint);
+        font-family: "IBM Plex Mono", monospace;
+      }
+      .review-stars {
+        color: #f5a623;
+        font-size: 18px;
+        letter-spacing: 2px;
+      }
+      .review-body {
+        font-size: 14px;
+        color: var(--ink-soft);
+        line-height: 1.65;
+        margin-top: 8px;
+      }
+
+      .empty {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--ink-faint);
+      }
+      .empty .icon {
+        font-size: 56px;
+        margin-bottom: 14px;
+        opacity: 0.6;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="topbar anim">
+      <div class="wrap topbar-row">
+        <div class="brandmark">🔧 PartMatch · Service Center</div>
+        <a href="{{ url_for('service_center_dashboard') }}" class="navlink"
+          >🏠 Dashboard</a
+        >
+        <a href="{{ url_for('service_center_reviews') }}" class="navlink active"
+          >⭐ Reviews</a
+        >
+        <a href="{{ url_for('service_center_maintenance') }}" class="navlink"
+          >🛠️ Maintenance</a
+        >
+        <a href="{{ url_for('service_center_analytics') }}" class="navlink"
+          >📊 Analytics</a
+        >
+        <a href="{{ url_for('service_center_profile') }}" class="navlink"
+          >👤 Profile</a
+        >
+        <div class="nav-spacer"></div>
+        <a href="{{ url_for('logout') }}" class="navlink logout">🚪 Logout</a>
+      </div>
+    </div>
+
+    <div class="wrap">
+      <div class="page-head anim">
+        <span class="eyebrow">Reviews</span>
+        <h1>Customer Reviews</h1>
+      </div>
+
+      {% if stats.review_count > 0 %}
+      <div class="card anim">
+        <div class="summary">
+          <div class="big-rating">
+            <div class="num">{{ '%.1f'|format(stats.avg_rating) }}</div>
+            <div class="stars">
+              {% for i in range(1, 6) %} {% if i <= stats.avg_rating|round(0,
+              'floor')|int %}★{% else %}☆{% endif %} {% endfor %}
+            </div>
+            <div class="count">{{ stats.review_count }} total</div>
+          </div>
+          <div>
+            {% for star in [5, 4, 3, 2, 1] %}
+            <div class="dist-row">
+              <span class="star-label">{{ star }}★</span>
+              <div class="dist-bar">
+                <div
+                  class="fill"
+                  style="width: {{ (rating_distribution[star] / stats.review_count * 100) if stats.review_count > 0 else 0 }}%;"
+                ></div>
+              </div>
+              <span class="count">{{ rating_distribution[star] }}</span>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="anim">
+        <div class="filter-bar">
+          <a
+            href="{{ url_for('service_center_reviews', rating='all') }}"
+            class="chip {% if rating_filter == 'all' %}active{% endif %}"
+            >All Ratings</a
+          >
+          <a
+            href="{{ url_for('service_center_reviews', rating='5') }}"
+            class="chip {% if rating_filter == '5' %}active{% endif %}"
+            >5★</a
+          >
+          <a
+            href="{{ url_for('service_center_reviews', rating='4') }}"
+            class="chip {% if rating_filter == '4' %}active{% endif %}"
+            >4★</a
+          >
+          <a
+            href="{{ url_for('service_center_reviews', rating='3') }}"
+            class="chip {% if rating_filter == '3' %}active{% endif %}"
+            >3★</a
+          >
+          <a
+            href="{{ url_for('service_center_reviews', rating='2') }}"
+            class="chip {% if rating_filter == '2' %}active{% endif %}"
+            >2★</a
+          >
+          <a
+            href="{{ url_for('service_center_reviews', rating='1') }}"
+            class="chip {% if rating_filter == '1' %}active{% endif %}"
+            >1★</a
+          >
+        </div>
+
+        {% for review in reviews %}
+        <div class="review">
+          <div class="review-head">
+            <div class="review-user">
+              <div class="review-avatar">
+                {{ review.customer_name[:1].upper() }}
+              </div>
+              <div>
+                <div class="review-name">{{ review.customer_name }}</div>
+                <div class="review-date">
+                  {{ review.created_at.strftime('%d %b %Y · %I:%M %p') }}
+                </div>
+              </div>
+            </div>
+            <div class="review-stars">
+              {% for i in range(1, 6) %} {% if i <= review.rating %}★{% else
+              %}☆{% endif %} {% endfor %}
+            </div>
+          </div>
+          {% if review.comment %}
+          <div class="review-body">{{ review.comment }}</div>
+          {% else %}
+          <div
+            class="review-body"
+            style="font-style: italic; color: var(--ink-faint)"
+          >
+            No comment provided.
+          </div>
+          {% endif %}
+        </div>
+        {% else %}
+        <div class="empty">
+          <div class="icon">💬</div>
+          <h3 style="margin-bottom: 8px">No reviews yet</h3>
+          <p>
+            Customer reviews will appear here once they complete a service and
+            leave feedback.
+          </p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </body>
+</html>
