@@ -238,23 +238,20 @@
         border-bottom: 1px solid var(--glass-border);
         box-shadow: 0 4px 24px -12px rgba(13, 59, 44, 0.12);
       }
+      /* KEY FIX: topbar-row is now a flex container with 3 fixed sections
+         (brandmark | scrollable nav | fixed avatar+logout) */
       .topbar-row {
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
         padding: 14px 0;
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        scrollbar-width: none;
-      }
-      .topbar-row::-webkit-scrollbar {
-        display: none;
+        min-width: 0;
       }
       .brandmark {
         display: flex;
         align-items: center;
-        gap: 10px;
-        margin-right: 18px;
+        gap: 8px;
+        margin-right: 8px;
         flex-shrink: 0;
       }
       .brandmark svg {
@@ -276,12 +273,35 @@
         font-weight: 400;
       }
 
+      /* Scrollable nav group — takes remaining space, scrolls if needed */
+      .nav-scroll {
+        flex: 1 1 auto;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        overflow-x: auto;
+        scrollbar-width: none;
+        min-width: 0;
+      }
+      .nav-scroll::-webkit-scrollbar {
+        display: none;
+      }
+
+      /* Always-visible right side — avatar + logout */
+      .nav-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+        margin-left: auto;
+      }
+
       .navlink {
         display: flex;
         align-items: center;
-        gap: 7px;
-        padding: 9px 14px;
-        font-size: 13.5px;
+        gap: 6px;
+        padding: 8px 12px;
+        font-size: 13px;
         font-weight: 600;
         color: var(--ink-soft);
         border: 1px solid transparent;
@@ -289,7 +309,6 @@
         white-space: nowrap;
         transition: all 0.25s ease;
         flex-shrink: 0;
-        position: relative;
       }
       .navlink svg {
         width: 15px;
@@ -306,18 +325,15 @@
         color: #fff;
         box-shadow: 0 4px 14px -4px rgba(20, 108, 67, 0.5);
       }
-      .nav-spacer {
-        flex: 1;
-      }
+
       .navlink.logout {
         color: var(--red);
-        margin-left: auto;
-        flex-shrink: 0;
       }
       .navlink.logout:hover {
         background: #fdecea;
         border-color: #f6c6c1;
       }
+
       .admin-avatar {
         width: 32px;
         height: 32px;
@@ -760,6 +776,9 @@
         .dashboard-grid {
           grid-template-columns: 1fr;
         }
+        .brandmark span {
+          display: none;
+        }
       }
     </style>
   </head>
@@ -809,9 +828,10 @@
       />
     </svg>
 
-    <!-- ============ TOPBAR ============ -->
+    <!-- ============ TOPBAR (FIXED) ============ -->
     <div class="topbar anim">
       <div class="wrap topbar-row">
+        <!-- Brandmark (always visible, left) -->
         <div class="brandmark">
           <svg viewBox="0 0 40 40" fill="none">
             <rect
@@ -842,167 +862,173 @@
           <span><strong>PartMatch</strong><small>Admin Console</small></span>
         </div>
 
-        <a href="{{ url_for('admin_dashboard') }}" class="navlink active">
-          <svg viewBox="0 0 20 20" fill="none">
-            <path
-              d="M3 10l7-6 7 6"
-              stroke="currentColor"
-              stroke-width="1.6"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-            <path
-              d="M5 9v7a1 1 0 001 1h8a1 1 0 001-1V9"
-              stroke="currentColor"
-              stroke-width="1.6"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-          Dashboard
-        </a>
-        <a href="{{ url_for('admin_users') }}" class="navlink">
-          <svg viewBox="0 0 20 20" fill="none">
-            <circle
-              cx="7.5"
-              cy="6.5"
-              r="2.8"
-              stroke="currentColor"
-              stroke-width="1.5"
-            />
-            <path
-              d="M2.5 17c.9-3 3-4.6 5-4.6s4.1 1.6 5 4.6"
-              stroke="currentColor"
-              stroke-width="1.5"
-              stroke-linecap="round"
-            />
-            <circle
-              cx="14.5"
-              cy="7"
-              r="2.2"
-              stroke="currentColor"
-              stroke-width="1.5"
-            />
-            <path
-              d="M13 12.7c2 .2 3.5 1.7 4.2 4.3"
-              stroke="currentColor"
-              stroke-width="1.5"
-              stroke-linecap="round"
-            />
-          </svg>
-          Users
-        </a>
-        <a href="{{ url_for('admin_vendors') }}" class="navlink">
-          <svg viewBox="0 0 20 20" fill="none">
-            <path
-              d="M3 8l1.2-4.2A1 1 0 015.16 3h9.68a1 1 0 01.96.78L17 8"
-              stroke="currentColor"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-            <rect
-              x="3"
-              y="8"
-              width="14"
-              height="8.5"
-              rx="0.6"
-              stroke="currentColor"
-              stroke-width="1.5"
-            />
-            <path
-              d="M7.5 12.2h5"
-              stroke="currentColor"
-              stroke-width="1.5"
-              stroke-linecap="round"
-            />
-          </svg>
-          Vendors
-        </a>
-        <a href="{{ url_for('admin_service_centers') }}" class="navlink">
-          <svg viewBox="0 0 20 20" fill="none">
-            <path
-              d="M12.4 3.6a3.2 3.2 0 00-4.3 3.9L3.7 12a1.5 1.5 0 002.1 2.1l4.5-4.4a3.2 3.2 0 003.9-4.3l-2 2-1.7-.5-.5-1.7 2.4-1.6z"
-              stroke="currentColor"
-              stroke-width="1.4"
-              stroke-linejoin="round"
-              stroke-linecap="round"
-            />
-          </svg>
-          Service Centers
-        </a>
-        <a href="{{ url_for('admin_products') }}" class="navlink">
-          <svg viewBox="0 0 20 20" fill="none">
-            <path
-              d="M3 6.5l7-3.5 7 3.5-7 3.5-7-3.5z"
-              stroke="currentColor"
-              stroke-width="1.5"
-              stroke-linejoin="round"
-            />
-            <path
-              d="M3 6.5V14l7 3.5 7-3.5V6.5"
-              stroke="currentColor"
-              stroke-width="1.5"
-              stroke-linejoin="round"
-            />
-            <path d="M10 10v7.5" stroke="currentColor" stroke-width="1.5" />
-          </svg>
-          Products
-        </a>
-        <a href="{{ url_for('admin_reviews') }}" class="navlink">⭐ Reviews</a>
-        <a href="{{ url_for('admin_orders') }}" class="navlink">🛒 Orders</a>
-        <a href="{{ url_for('admin_reports') }}" class="navlink">
-          <svg viewBox="0 0 20 20" fill="none">
-            <path
-              d="M4 16V8M10 16V4M16 16v-5"
-              stroke="currentColor"
-              stroke-width="1.8"
-              stroke-linecap="round"
-            />
-          </svg>
-          Reports
-        </a>
-        <a href="{{ url_for('admin_profile') }}" class="navlink">
-          <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
-            <circle
-              cx="10"
-              cy="7"
-              r="3.5"
-              stroke="currentColor"
-              stroke-width="1.5"
-            />
-            <path
-              d="M3 18c1.5-4 4-6 7-6s5.5 2 7 6"
-              stroke="currentColor"
-              stroke-width="1.5"
-              stroke-linecap="round"
-            />
-          </svg>
-          Profile
-        </a>
-        <div class="nav-spacer"></div>
-        <div class="admin-avatar">
-          {{ (session.get('user_name') or 'A')[0]|upper }}
+        <!-- Scrollable nav links (middle) -->
+        <nav class="nav-scroll">
+          <a href="{{ url_for('admin_dashboard') }}" class="navlink active">
+            <svg viewBox="0 0 20 20" fill="none">
+              <path
+                d="M3 10l7-6 7 6"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M5 9v7a1 1 0 001 1h8a1 1 0 001-1V9"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            Dashboard
+          </a>
+          <a href="{{ url_for('admin_users') }}" class="navlink">
+            <svg viewBox="0 0 20 20" fill="none">
+              <circle
+                cx="7.5"
+                cy="6.5"
+                r="2.8"
+                stroke="currentColor"
+                stroke-width="1.5"
+              />
+              <path
+                d="M2.5 17c.9-3 3-4.6 5-4.6s4.1 1.6 5 4.6"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+              />
+              <circle
+                cx="14.5"
+                cy="7"
+                r="2.2"
+                stroke="currentColor"
+                stroke-width="1.5"
+              />
+              <path
+                d="M13 12.7c2 .2 3.5 1.7 4.2 4.3"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+              />
+            </svg>
+            Users
+          </a>
+          <a href="{{ url_for('admin_vendors') }}" class="navlink">
+            <svg viewBox="0 0 20 20" fill="none">
+              <path
+                d="M3 8l1.2-4.2A1 1 0 015.16 3h9.68a1 1 0 01.96.78L17 8"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <rect
+                x="3"
+                y="8"
+                width="14"
+                height="8.5"
+                rx="0.6"
+                stroke="currentColor"
+                stroke-width="1.5"
+              />
+              <path
+                d="M7.5 12.2h5"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+              />
+            </svg>
+            Vendors
+          </a>
+          <a href="{{ url_for('admin_service_centers') }}" class="navlink">
+            <svg viewBox="0 0 20 20" fill="none">
+              <path
+                d="M12.4 3.6a3.2 3.2 0 00-4.3 3.9L3.7 12a1.5 1.5 0 002.1 2.1l4.5-4.4a3.2 3.2 0 003.9-4.3l-2 2-1.7-.5-.5-1.7 2.4-1.6z"
+                stroke="currentColor"
+                stroke-width="1.4"
+                stroke-linejoin="round"
+                stroke-linecap="round"
+              />
+            </svg>
+            Service Centers
+          </a>
+          <a href="{{ url_for('admin_products') }}" class="navlink">
+            <svg viewBox="0 0 20 20" fill="none">
+              <path
+                d="M3 6.5l7-3.5 7 3.5-7 3.5-7-3.5z"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M3 6.5V14l7 3.5 7-3.5V6.5"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linejoin="round"
+              />
+              <path d="M10 10v7.5" stroke="currentColor" stroke-width="1.5" />
+            </svg>
+            Products
+          </a>
+          <a href="{{ url_for('admin_orders') }}" class="navlink">🛒 Orders</a>
+          <a href="{{ url_for('admin_reviews') }}" class="navlink">⭐ Reviews</a>
+          <a href="{{ url_for('admin_reports') }}" class="navlink">
+            <svg viewBox="0 0 20 20" fill="none">
+              <path
+                d="M4 16V8M10 16V4M16 16v-5"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              />
+            </svg>
+            Reports
+          </a>
+          <a href="{{ url_for('admin_profile') }}" class="navlink">
+            <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
+              <circle
+                cx="10"
+                cy="7"
+                r="3.5"
+                stroke="currentColor"
+                stroke-width="1.5"
+              />
+              <path
+                d="M3 18c1.5-4 4-6 7-6s5.5 2 7 6"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+              />
+            </svg>
+            Profile
+          </a>
+        </nav>
+
+        <!-- Always-visible right side (avatar + logout) -->
+        <div class="nav-actions">
+          <div class="admin-avatar">
+            {{ (session.get('user_name') or 'A')[0]|upper }}
+          </div>
+          <a href="{{ url_for('logout') }}" class="navlink logout">
+            <svg viewBox="0 0 20 20" fill="none">
+              <path
+                d="M8 17H4.5A1.5 1.5 0 013 15.5v-11A1.5 1.5 0 014.5 3H8"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M13 13.5L17 10l-4-3.5M17 10H8"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            Logout
+          </a>
         </div>
-        <a href="{{ url_for('logout') }}" class="navlink logout">
-          <svg viewBox="0 0 20 20" fill="none">
-            <path
-              d="M8 17H4.5A1.5 1.5 0 013 15.5v-11A1.5 1.5 0 014.5 3H8"
-              stroke="currentColor"
-              stroke-width="1.6"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-            <path
-              d="M13 13.5L17 10l-4-3.5M17 10H8"
-              stroke="currentColor"
-              stroke-width="1.6"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-          Logout
-        </a>
       </div>
     </div>
 

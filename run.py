@@ -2330,19 +2330,19 @@ def customer_verify_payment():
         session['cart'] = []
         session.modified = True
         
-        cursor.close()
-        conn.close()
-        
         flash(f'Payment successful! Order #{new_order_id} placed.', 'success')
-                # Send order confirmation email
+        
+        # ==================== EMAIL NOTIFICATION (BEFORE closing cursor) ====================
         try:
-            cursor.execute("SELECT email FROM users WHERE id = %s", (customer_id,))
+            # Notify customer
+            cursor.execute("SELECT email, name FROM users WHERE id = %s", (customer_id,))
             cust = cursor.fetchone()
             if cust and cust['email']:
                 email_body = f"""
                 <div style="font-family:Arial,sans-serif; max-width:600px; margin:0 auto; padding:20px; background:#f4faf5;">
                     <div style="background:#fff; padding:30px; border-radius:12px;">
                         <h1 style="color:#146c43; font-family:Georgia,serif;">Order Confirmed! 🎉</h1>
+                        <p>Hi {cust['name']},</p>
                         <p>Thank you for your order <strong>#{new_order_id}</strong>.</p>
                         <p>Amount: <strong>₹{subtotal:.0f}</strong></p>
                         <p><strong>Shipping Address:</strong><br>{shipping_address}</p>
@@ -2353,8 +2353,35 @@ def customer_verify_payment():
                 </div>
                 """
                 send_email(cust['email'], f'Order #{new_order_id} Confirmed — PartMatch', email_body)
+            
+            # Notify each vendor in the order
+            cursor.execute("""
+                SELECT DISTINCT u.email, u.name
+                FROM order_items oi
+                JOIN products p ON oi.product_id = p.id
+                JOIN users u ON p.vendor_id = u.id
+                WHERE oi.order_id = %s
+            """, (new_order_id,))
+            vendors = cursor.fetchall()
+            for vendor in vendors:
+                if vendor['email']:
+                    vendor_body = f"""
+                    <div style="font-family:Arial,sans-serif; padding:20px;">
+                        <h2 style="color:#146c43;">New Order Received! 📦</h2>
+                        <p>Hi {vendor['name']},</p>
+                        <p>You have a new order <strong>#{new_order_id}</strong> from {cust['name']}.</p>
+                        <p>Log in to view order details and process shipment.</p>
+                        <a href="http://localhost:5000/vendor/orders" style="display:inline-block; padding:12px 24px; background:#146c43; color:#fff; text-decoration:none; border-radius:8px;">View Order</a>
+                    </div>
+                    """
+                    send_email(vendor['email'], f'New Order #{new_order_id} — PartMatch', vendor_body)
         except Exception as e:
             print(f"Email error: {e}")
+        # ==================== END EMAIL NOTIFICATION ====================
+        
+        cursor.close()
+        conn.close()
+        
         return redirect(url_for('customer_orders'))
     
     except Exception as e:
